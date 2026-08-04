@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Compass, Loader2, MessageCircle, Send, X } from "lucide-react";
+import { Loader2, MessageCircle, Send, X } from "lucide-react";
+import { Logo } from "@/components/Logo";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -65,9 +66,7 @@ export function ChatWidget() {
             className="flex h-[32rem] w-[22rem] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/15"
           >
             <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-indigo-600 text-white">
-                <Compass className="h-4 w-4" strokeWidth={2.25} />
-              </span>
+              <Logo size={32} />
               <div>
                 <p className="text-sm font-semibold text-slate-900">VoyageAI Assistant</p>
                 <p className="text-xs text-slate-400">Ask about the app or travel planning</p>

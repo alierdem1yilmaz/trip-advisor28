@@ -3,7 +3,8 @@
 import { useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Compass, Loader2, MapPin, RotateCcw } from "lucide-react";
+import { Loader2, MapPin, RotateCcw } from "lucide-react";
+import { Logo } from "@/components/Logo";
 import {
   COMPANION_OPTIONS,
   INTEREST_OPTIONS,
@@ -112,9 +113,7 @@ export function TripBuilder() {
       <header className="border-b border-slate-100">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
           <Link href="/" className="flex items-center gap-2 font-semibold text-slate-900">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-indigo-600 text-white">
-              <Compass className="h-4.5 w-4.5" strokeWidth={2.25} />
-            </span>
+            <Logo size={32} />
             VoyageAI
           </Link>
           {plan && (
