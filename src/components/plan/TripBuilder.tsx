@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -42,6 +43,8 @@ type Stop = {
   title: string;
   description: string;
   reason: string;
+  lat?: number;
+  lon?: number;
 };
 
 type Weather = {
@@ -61,12 +64,22 @@ type Day = {
 
 type Plan = {
   destination: string;
+  center?: { lat: number; lon: number };
   days: Day[];
   groundedPlaceCount?: number;
 };
 
 const STEPS = ["destination", "dates", "companions", "transport", "pace", "interests"] as const;
 type StepKey = (typeof STEPS)[number];
+
+const StopMap = dynamic(() => import("./StopMap").then((m) => m.StopMap), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full w-full items-center justify-center bg-slate-100 text-sm text-slate-400">
+      <Loader2 className="h-5 w-5 animate-spin" />
+    </div>
+  ),
+});
 
 const WEATHER_ICON: Record<Weather["condition"], LucideIcon> = {
   clear: Sun,
@@ -224,7 +237,7 @@ export function TripBuilder() {
             key="results"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mx-auto max-w-4xl px-6 py-16"
+            className="mx-auto max-w-6xl px-6 py-16"
           >
             <div className="text-center">
               <p className="text-sm font-medium text-teal-600">
@@ -281,57 +294,89 @@ export function TripBuilder() {
             <AnimatePresence mode="wait">
               {plan.days
                 .filter((d) => d.day === activeDay)
-                .map((d) => (
-                  <motion.div
-                    key={d.day}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="mx-auto mt-10 max-w-2xl"
-                  >
-                    <h2 className="text-center text-xl font-semibold text-slate-900">
-                      {d.theme}
-                    </h2>
-                    {(d.date || d.weather) && (
-                      <p className="mt-1 flex items-center justify-center gap-2 text-center text-sm text-slate-400">
-                        {d.date}
-                        {d.date && d.weather && <span>&middot;</span>}
-                        {d.weather &&
-                          (() => {
-                            const WeatherIcon = WEATHER_ICON[d.weather.condition];
-                            return (
-                              <span className="inline-flex items-center gap-1">
-                                <WeatherIcon className="h-3.5 w-3.5" />
-                                {d.weather.label}, {d.weather.tempMinC}–{d.weather.tempMaxC}°C
+                .map((d) => {
+                  const stopsWithCoords = d.stops.filter(
+                    (s): s is Stop & { lat: number; lon: number } => s.lat != null && s.lon != null,
+                  );
+                  const mapCenter =
+                    plan.center ??
+                    (stopsWithCoords.length > 0
+                      ? { lat: stopsWithCoords[0].lat, lon: stopsWithCoords[0].lon }
+                      : null);
+
+                  return (
+                    <motion.div
+                      key={d.day}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="mx-auto mt-10"
+                    >
+                      <h2 className="text-center text-xl font-semibold text-slate-900">
+                        {d.theme}
+                      </h2>
+                      {(d.date || d.weather) && (
+                        <p className="mt-1 flex items-center justify-center gap-2 text-center text-sm text-slate-400">
+                          {d.date}
+                          {d.date && d.weather && <span>&middot;</span>}
+                          {d.weather &&
+                            (() => {
+                              const WeatherIcon = WEATHER_ICON[d.weather.condition];
+                              return (
+                                <span className="inline-flex items-center gap-1">
+                                  <WeatherIcon className="h-3.5 w-3.5" />
+                                  {d.weather.label}, {d.weather.tempMinC}–{d.weather.tempMaxC}°C
+                                </span>
+                              );
+                            })()}
+                        </p>
+                      )}
+
+                      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+                        <div className="h-[420px] overflow-hidden rounded-2xl border border-slate-200 lg:sticky lg:top-6 lg:h-[calc(100vh-8rem)] lg:max-h-[640px]">
+                          {mapCenter ? (
+                            <StopMap stops={d.stops} center={mapCenter} />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-slate-50 px-6 text-center text-sm text-slate-400">
+                              <MapPin className="mr-2 h-4 w-4" />
+                              Map unavailable for this trip
+                            </div>
+                          )}
+                        </div>
+
+                        <ul className="space-y-6">
+                          {d.stops.map((stop, i) => (
+                            <motion.li
+                              key={`${stop.title}-${i}`}
+                              initial={{ opacity: 0, x: -12 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: i * 0.08 }}
+                              className="flex gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-5"
+                            >
+                              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-indigo-600 text-xs font-bold text-white">
+                                {i + 1}
                               </span>
-                            );
-                          })()}
-                      </p>
-                    )}
-                    <ul className="mt-8 space-y-6">
-                      {d.stops.map((stop, i) => (
-                        <motion.li
-                          key={`${stop.title}-${i}`}
-                          initial={{ opacity: 0, x: -12 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: i * 0.08 }}
-                          className="rounded-2xl border border-slate-100 bg-slate-50 p-5"
-                        >
-                          <p className="text-xs font-medium tracking-wide text-slate-400 uppercase">
-                            {stop.time}
-                          </p>
-                          <p className="mt-1 text-lg font-semibold text-slate-900">
-                            {stop.title}
-                          </p>
-                          <p className="mt-1.5 text-sm text-slate-600">{stop.description}</p>
-                          <p className="mt-2 text-xs text-indigo-600 italic">
-                            {t.results.why}: {stop.reason}
-                          </p>
-                        </motion.li>
-                      ))}
-                    </ul>
-                  </motion.div>
-                ))}
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium tracking-wide text-slate-400 uppercase">
+                                  {stop.time}
+                                </p>
+                                <p className="mt-1 text-lg font-semibold text-slate-900">
+                                  {stop.title}
+                                </p>
+                                <p className="mt-1.5 text-sm text-slate-600">
+                                  {stop.description}
+                                </p>
+                                <p className="mt-2 text-xs text-indigo-600 italic">
+                                  {t.results.why}: {stop.reason}
+                                </p>
+                              </div>
+                            </motion.li>
+                          ))}
+                        </ul>
+                      </div>
+                    </motion.div>
+                  );
+                })}
             </AnimatePresence>
           </motion.section>
         ) : (

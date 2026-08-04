@@ -4,6 +4,8 @@ export type Poi = {
   name: string;
   kinds: string;
   rating: number;
+  lat: number;
+  lon: number;
 };
 
 const INTEREST_KINDS: Record<string, string> = {
@@ -22,17 +24,22 @@ function kindsForInterests(interests: string[]): string {
   return mapped.length > 0 ? [...new Set(mapped)].join(",") : DEFAULT_KINDS;
 }
 
-/** Geocode a place name to coordinates. Returns null if not found or on any API error. */
-async function geocode(
+/** Geocode a destination name (city/region) to coordinates. Null on any failure. */
+export async function geocodeDestination(
   destination: string,
-  apiKey: string,
 ): Promise<{ lat: number; lon: number } | null> {
-  const url = `${BASE_URL}/geoname?name=${encodeURIComponent(destination)}&apikey=${apiKey}`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
-  if (!res.ok) return null;
-  const data = await res.json();
-  if (data.status !== "OK" || typeof data.lat !== "number") return null;
-  return { lat: data.lat, lon: data.lon };
+  const apiKey = process.env.OPENTRIPMAP_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const url = `${BASE_URL}/geoname?name=${encodeURIComponent(destination)}&apikey=${apiKey}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.status !== "OK" || typeof data.lat !== "number") return null;
+    return { lat: data.lat, lon: data.lon };
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -50,7 +57,7 @@ export async function findPois(
   if (!apiKey) return [];
 
   try {
-    const coords = await geocode(destination, apiKey);
+    const coords = await geocodeDestination(destination);
     if (!coords) return [];
 
     const kinds = kindsForInterests(interests);
@@ -63,14 +70,45 @@ export async function findPois(
       name?: string;
       kinds?: string;
       rate?: number;
+      point?: { lat: number; lon: number };
     }>;
 
     return places
-      .filter((p) => p.name && p.name.trim().length > 0)
+      .filter((p) => p.name && p.name.trim().length > 0 && p.point)
       .sort((a, b) => (b.rate ?? 0) - (a.rate ?? 0))
       .slice(0, fetchLimit)
-      .map((p) => ({ name: p.name!.trim(), kinds: p.kinds ?? "", rating: p.rate ?? 0 }));
+      .map((p) => ({
+        name: p.name!.trim(),
+        kinds: p.kinds ?? "",
+        rating: p.rate ?? 0,
+        lat: p.point!.lat,
+        lon: p.point!.lon,
+      }));
   } catch {
     return [];
+  }
+}
+
+/**
+ * Best-effort resolution of a specific place name to coordinates, searched
+ * near a reference point. Used as a fallback for stops the model added that
+ * weren't in the original grounding list. Returns null on any failure —
+ * an unresolved stop just doesn't get a map pin, never a hard error.
+ */
+export async function resolvePlaceName(
+  name: string,
+  near: { lat: number; lon: number },
+): Promise<{ lat: number; lon: number } | null> {
+  const apiKey = process.env.OPENTRIPMAP_API_KEY;
+  if (!apiKey || !name.trim()) return null;
+  try {
+    const url = `${BASE_URL}/autosuggest?name=${encodeURIComponent(name.trim())}&radius=15000&lon=${near.lon}&lat=${near.lat}&limit=1&format=json&apikey=${apiKey}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+    if (!res.ok) return null;
+    const matches = (await res.json()) as Array<{ point?: { lat: number; lon: number } }>;
+    const point = matches[0]?.point;
+    return point ? { lat: point.lat, lon: point.lon } : null;
+  } catch {
+    return null;
   }
 }

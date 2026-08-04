@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateJson } from "@/lib/fal";
-import { findPois } from "@/lib/opentripmap";
+import { findPois, geocodeDestination, resolvePlaceName, type Poi } from "@/lib/opentripmap";
 import { getDailyForecast, type DailyWeather } from "@/lib/weather";
 import { LANGUAGE_PROMPT_NAME, resolveLanguage } from "@/lib/i18n/dictionaries";
 import {
@@ -29,15 +29,29 @@ type ItineraryDay = {
   stops: ItineraryStop[];
 };
 
-type ResponseDay = ItineraryDay & {
+type ResponseStop = ItineraryStop & { lat?: number; lon?: number };
+
+type ResponseDay = Omit<ItineraryDay, "stops"> & {
+  stops: ResponseStop[];
   weather?: { tempMaxC: number; tempMinC: number; condition: string; label: string };
 };
 
 type PlanResponse = {
   destination: string;
+  center?: { lat: number; lon: number };
   days: ResponseDay[];
   groundedPlaceCount?: number;
 };
+
+/** Case-insensitive, either-direction substring match against the grounded POI list. */
+function matchPoi(title: string, pois: Poi[]): Poi | undefined {
+  const needle = title.trim().toLowerCase();
+  if (!needle) return undefined;
+  return pois.find((p) => {
+    const hay = p.name.trim().toLowerCase();
+    return hay === needle || hay.includes(needle) || needle.includes(hay);
+  });
+}
 
 const PACE_LABEL: Record<string, string> = {
   relaxed: "relaxed, with plenty of downtime and few stops per day",
@@ -155,9 +169,10 @@ export async function POST(request: Request) {
         .slice(0, MAX_INTERESTS)
     : [];
 
-  const [pois, forecast] = await Promise.all([
+  const [pois, forecast, center] = await Promise.all([
     findPois(destination.trim(), interestList, dayCount * 6),
     getDailyForecast(destination.trim(), startDate, clampedEndDate),
+    geocodeDestination(destination.trim()),
   ]);
 
   const groundingBlock =
@@ -197,20 +212,42 @@ Write all text values (theme, time, title, description, reason) entirely in ${LA
     if (!plan?.days?.length) {
       throw new Error("Malformed plan response");
     }
-    const daysWithExtras: ResponseDay[] = plan.days.map((d) => {
-      const iso = addDaysIso(startDate, d.day - 1);
-      const w = weatherByDate.get(iso);
-      return {
-        ...d,
-        date: formatFriendlyIso(iso, lang),
-        weather: w
-          ? { tempMaxC: w.tempMaxC, tempMinC: w.tempMinC, condition: w.condition, label: w.label }
-          : undefined,
-      };
-    });
+
+    // Resolve a map pin per stop: prefer an exact match against the already-
+    // fetched grounded POIs (free, no extra call); fall back to a single
+    // autosuggest lookup near the destination center for stops the model
+    // added on its own. Runs concurrently — an unresolved stop just has no
+    // pin, never a hard failure.
+    const daysWithCoords: ResponseDay[] = await Promise.all(
+      plan.days.map(async (d) => {
+        const iso = addDaysIso(startDate, d.day - 1);
+        const w = weatherByDate.get(iso);
+        const stops: ResponseStop[] = await Promise.all(
+          d.stops.map(async (stop) => {
+            const matched = matchPoi(stop.title, pois);
+            if (matched) return { ...stop, lat: matched.lat, lon: matched.lon };
+            if (center) {
+              const resolved = await resolvePlaceName(stop.title, center);
+              if (resolved) return { ...stop, lat: resolved.lat, lon: resolved.lon };
+            }
+            return stop;
+          }),
+        );
+        return {
+          ...d,
+          stops,
+          date: formatFriendlyIso(iso, lang),
+          weather: w
+            ? { tempMaxC: w.tempMaxC, tempMinC: w.tempMinC, condition: w.condition, label: w.label }
+            : undefined,
+        };
+      }),
+    );
+
     const response: PlanResponse = {
       destination: destination.trim(),
-      days: daysWithExtras,
+      center: center ?? undefined,
+      days: daysWithCoords,
       groundedPlaceCount: pois.length,
     };
     return NextResponse.json(response);
