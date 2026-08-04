@@ -1,25 +1,28 @@
 import { Star } from "lucide-react";
 import { testimonials } from "@/data/marketing";
+import { Reveal } from "./Reveal";
 
 export function Testimonials() {
   return (
-    <section id="reviews" className="mx-auto max-w-6xl px-6 py-24">
-      <div className="mx-auto max-w-2xl text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-white">
+    <section id="reviews" className="mx-auto max-w-6xl px-6 py-24 sm:py-32">
+      <Reveal className="mx-auto max-w-2xl text-center">
+        <h2 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl dark:text-white">
           What early access testers are saying
         </h2>
-        <p className="mt-4 text-slate-600 dark:text-slate-300">
+        <p className="mt-4 text-lg text-slate-600 dark:text-slate-300">
           A first look from the small group of travelers piloting VoyageAI ahead
           of public launch.
         </p>
-      </div>
+      </Reveal>
 
       <div className="mt-14 grid gap-6 sm:grid-cols-3">
-        {testimonials.map((testimonial) => (
-          <figure
+        {testimonials.map((testimonial, index) => (
+          <Reveal
             key={testimonial.name}
+            delay={index * 0.1}
             className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900"
           >
+          <figure className="flex h-full flex-col">
             <div className="flex gap-0.5">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star
@@ -49,6 +52,7 @@ export function Testimonials() {
               </div>
             </figcaption>
           </figure>
+          </Reveal>
         ))}
       </div>
     </section>

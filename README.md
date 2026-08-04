@@ -41,7 +41,8 @@ sign-up links and what each key unlocks; short version:
 
 | Service | Free tier | Powers |
 |---|---|---|
-| [Anthropic API](https://console.anthropic.com) | Paid, pay-as-you-go | LLM reasoning, explainable recommendations, chat assistant |
+| [Gemini API](https://aistudio.google.com/apikey) | Free, no card | LLM reasoning — the live "Try VoyageAI" demo and default itinerary generation |
+| [Anthropic API](https://console.anthropic.com) | Paid, pay-as-you-go | Optional upgrade path once quality/production needs outgrow Flash |
 | [OpenTripMap](https://opentripmap.io/product) | Free (rate-limited) | Worldwide POI database: attractions, museums, hidden gems |
 | [OpenRouteService](https://openrouteservice.org/dev/#/signup) | Free: 2,500 req/day, 40k/month | Route optimization, geocoding, isochrones |
 | [Open-Meteo](https://open-meteo.com) | Free, **no key needed** | Weather-adaptive planning |
@@ -62,10 +63,12 @@ sign-up links and what each key unlocks; short version:
 4. **Route optimization**: a real (non-LLM) algorithm — nearest-neighbor
    or 2-opt TSP heuristic, or OR-Tools if complexity grows — sequences the
    day. Keep this deterministic; don't ask an LLM to solve routing.
-5. **Explainable AI layer**: Anthropic API generates the natural-language
+5. **Explainable AI layer**: an LLM (Gemini Flash by default, free tier;
+   swap in Anthropic for production quality) generates the natural-language
    "why" behind each scheduling decision, using the optimizer's output as
    structured input. This is where the LLM adds real value: reasoning and
-   language, not math.
+   language, not math. A first version of this already ships as the "Try
+   VoyageAI" demo on the landing page.
 6. **Adaptive replanning**: recalculate remaining stops when the user
    skips something, weather changes, or they run behind schedule.
 7. Everything else in the vision doc (crowd prediction, restaurant

@@ -1,6 +1,7 @@
 import { Compass } from "lucide-react";
 
 const links = [
+  { href: "#try-it", label: "Try it" },
   { href: "#features", label: "Features" },
   { href: "#how-it-works", label: "How it works" },
   { href: "#reviews", label: "Reviews" },

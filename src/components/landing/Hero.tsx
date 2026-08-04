@@ -1,4 +1,5 @@
 import { ArrowRight, CloudSun, MapPin, Sparkles } from "lucide-react";
+import { Reveal } from "./Reveal";
 
 export function Hero() {
   return (
@@ -14,14 +15,14 @@ export function Hero() {
           Now onboarding early access travelers
         </span>
 
-        <h1 className="mt-6 max-w-3xl text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl dark:text-white">
+        <h1 className="mt-6 max-w-4xl text-5xl font-bold tracking-tight text-slate-900 sm:text-7xl dark:text-white">
           Your smartest travel companion,{" "}
           <span className="bg-gradient-to-r from-teal-500 to-indigo-600 bg-clip-text text-transparent">
             from planning to exploring.
           </span>
         </h1>
 
-        <p className="mt-6 max-w-2xl text-lg text-slate-600 dark:text-slate-300">
+        <p className="mt-6 max-w-2xl text-lg text-slate-600 sm:text-xl dark:text-slate-300">
           VoyageAI turns maps, reviews, weather, and transit into one itinerary that
           actually fits your trip, optimized in seconds and rebuilt on the fly
           whenever your day changes.
@@ -29,10 +30,10 @@ export function Hero() {
 
         <div className="mt-9 flex flex-col items-center gap-4 sm:flex-row">
           <a
-            href="#waitlist"
+            href="#try-it"
             className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
           >
-            Plan my first trip
+            Try it live
             <ArrowRight className="h-4 w-4" />
           </a>
           <a
@@ -43,7 +44,7 @@ export function Hero() {
           </a>
         </div>
 
-        <div className="mt-16 w-full max-w-2xl rounded-2xl border border-slate-200 bg-white/70 p-5 text-left shadow-xl shadow-slate-900/5 backdrop-blur sm:p-6 dark:border-slate-800 dark:bg-slate-900/70">
+        <Reveal delay={0.15} className="mt-16 w-full max-w-2xl rounded-2xl border border-slate-200 bg-white/70 p-5 text-left shadow-xl shadow-slate-900/5 backdrop-blur sm:p-6 dark:border-slate-800 dark:bg-slate-900/70">
           <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
             <div>
               <p className="text-xs font-medium tracking-wide text-slate-400 uppercase">
@@ -87,7 +88,7 @@ export function Hero() {
               </span>
             </li>
           </ul>
-        </div>
+        </Reveal>
       </div>
     </section>
   );
