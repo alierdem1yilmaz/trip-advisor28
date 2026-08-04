@@ -20,6 +20,11 @@ type ItineraryStop = {
   title: string;
   description: string;
   reason: string;
+  // Internal only, never shown to the user: the internationally-recognized
+  // (English) name of this exact place. OpenTripMap only indexes names in
+  // English or Russian, so a Turkish/Spanish `title` (e.g. "Ayasofya") won't
+  // match its search at all — this gives map lookup a name it can find.
+  mapQuery?: string;
 };
 
 type ItineraryDay = {
@@ -29,7 +34,14 @@ type ItineraryDay = {
   stops: ItineraryStop[];
 };
 
-type ResponseStop = ItineraryStop & { lat?: number; lon?: number };
+type ResponseStop = {
+  time: string;
+  title: string;
+  description: string;
+  reason: string;
+  lat?: number;
+  lon?: number;
+};
 
 type ResponseDay = Omit<ItineraryDay, "stops"> & {
   stops: ResponseStop[];
@@ -51,6 +63,47 @@ function matchPoi(title: string, pois: Poi[]): Poi | undefined {
     const hay = p.name.trim().toLowerCase();
     return hay === needle || hay.includes(needle) || needle.includes(hay);
   });
+}
+
+/**
+ * The model sometimes writes a descriptive title instead of the plain
+ * indexed place name — e.g. "Şehzade Camii ve Avlusu" ("...and its
+ * courtyard") or "Fatih Anıtı (Fatih Sultan Mehmet)" — which breaks both
+ * grounded-POI matching and the autosuggest fallback. Strip parentheticals
+ * and common "X and Y" conjunctions (in the languages this app supports) to
+ * get a second, cleaner candidate to try.
+ */
+function cleanPlaceName(title: string): string {
+  let cleaned = title.replace(/\s*\([^)]*\)\s*/g, " ").trim();
+  for (const conjunction of [" and ", " ve ", " y "]) {
+    const idx = cleaned.toLowerCase().indexOf(conjunction);
+    if (idx > 3) {
+      cleaned = cleaned.slice(0, idx).trim();
+      break;
+    }
+  }
+  return cleaned;
+}
+
+async function resolveStopLocation(
+  title: string,
+  pois: Poi[],
+  center: { lat: number; lon: number } | null,
+): Promise<{ lat: number; lon: number } | null> {
+  const direct = matchPoi(title, pois);
+  if (direct) return { lat: direct.lat, lon: direct.lon };
+
+  const cleaned = cleanPlaceName(title);
+  if (cleaned !== title) {
+    const cleanedMatch = matchPoi(cleaned, pois);
+    if (cleanedMatch) return { lat: cleanedMatch.lat, lon: cleanedMatch.lon };
+  }
+
+  if (!center) return null;
+  const resolved = await resolvePlaceName(title, center);
+  if (resolved) return resolved;
+  if (cleaned !== title) return resolvePlaceName(cleaned, center);
+  return null;
 }
 
 const PACE_LABEL: Record<string, string> = {
@@ -170,7 +223,7 @@ export async function POST(request: Request) {
     : [];
 
   const [pois, forecast, center] = await Promise.all([
-    findPois(destination.trim(), interestList, dayCount * 6),
+    findPois(destination.trim(), interestList, dayCount * 10),
     getDailyForecast(destination.trim(), startDate, clampedEndDate),
     geocodeDestination(destination.trim()),
   ]);
@@ -202,10 +255,11 @@ ${weatherBlock}
 ${groundingBlock}
 
 Respond with ONLY minified JSON matching exactly this shape, no markdown fences:
-{"days": [{"day": number, "theme": string (short theme for the day, e.g. "Old Town & River Views"), "stops": [{"time": string (e.g. "9:00 AM"), "title": string (short stop name), "description": string (max 18 words), "reason": string (max 16 words, why this stop is scheduled here/now, referencing weather or transport when it's the actual reason)}]}]}
+{"days": [{"day": number, "theme": string (short theme for the day, e.g. "Old Town & River Views"), "stops": [{"time": string (e.g. "9:00 AM"), "title": string (just the plain place name, nothing else — see rule below), "description": string (max 18 words), "reason": string (max 16 words, why this stop is scheduled here/now, referencing weather or transport when it's the actual reason), "mapQuery": string (the internationally-recognized/English name of this exact place, for map lookup only — never shown to the user, so it's fine for it to differ in language from "title")}]}]}
 
 Exactly ${dayCount} day objects, days numbered 1 to ${dayCount} in order. Each day has exactly 4 stops, ordered chronologically. Vary the stops across days — no repeats. Be specific to the destination — use real or plausible place names, not generic placeholders.
-Write all text values (theme, time, title, description, reason) entirely in ${LANGUAGE_PROMPT_NAME[lang]}. Keep proper place names as they really are.`;
+Critical rule for "title": it must be ONLY the real, plain name of the place, exactly as it would appear on a map or sign — nothing else appended. Never add descriptive suffixes ("... and its courtyard"), alternate names in parentheses, or explanatory text to the title. Any extra context like that belongs in "description" instead, not "title".
+Write all text values (theme, time, title, description, reason) entirely in ${LANGUAGE_PROMPT_NAME[lang]}. Keep proper place names as they really are — never translate a proper name. The exception is "mapQuery", which is always in English regardless of the response language.`;
 
   try {
     const plan = await generateJson<{ days: ItineraryDay[] }>(prompt);
@@ -224,13 +278,9 @@ Write all text values (theme, time, title, description, reason) entirely in ${LA
         const w = weatherByDate.get(iso);
         const stops: ResponseStop[] = await Promise.all(
           d.stops.map(async (stop) => {
-            const matched = matchPoi(stop.title, pois);
-            if (matched) return { ...stop, lat: matched.lat, lon: matched.lon };
-            if (center) {
-              const resolved = await resolvePlaceName(stop.title, center);
-              if (resolved) return { ...stop, lat: resolved.lat, lon: resolved.lon };
-            }
-            return stop;
+            const { mapQuery, ...rest } = stop;
+            const location = await resolveStopLocation(mapQuery || stop.title, pois, center);
+            return location ? { ...rest, lat: location.lat, lon: location.lon } : rest;
           }),
         );
         return {
