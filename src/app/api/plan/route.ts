@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateJson } from "@/lib/fal";
 import { findPois, geocodeDestination, resolvePlaceName, type Poi } from "@/lib/opentripmap";
+import { resolvePlaceFoursquare } from "@/lib/foursquare";
 import { getDailyForecast, type DailyWeather } from "@/lib/weather";
 import { LANGUAGE_PROMPT_NAME, resolveLanguage } from "@/lib/i18n/dictionaries";
 import {
@@ -100,9 +101,19 @@ async function resolveStopLocation(
   }
 
   if (!center) return null;
+
   const resolved = await resolvePlaceName(title, center);
   if (resolved) return resolved;
-  if (cleaned !== title) return resolvePlaceName(cleaned, center);
+  if (cleaned !== title) {
+    const resolvedCleaned = await resolvePlaceName(cleaned, center);
+    if (resolvedCleaned) return resolvedCleaned;
+  }
+
+  // Last resort: Foursquare's free tier tends to know small commercial
+  // places (cafés, restaurants, shops) that OpenTripMap/OSM misses.
+  const viaFoursquare = await resolvePlaceFoursquare(title, center);
+  if (viaFoursquare) return viaFoursquare;
+  if (cleaned !== title) return resolvePlaceFoursquare(cleaned, center);
   return null;
 }
 
