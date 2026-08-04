@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generateJson } from "@/lib/gemini";
+import { generateJson } from "@/lib/fal";
 import { findPois } from "@/lib/opentripmap";
 
 export const runtime = "nodejs";
@@ -89,11 +89,11 @@ Exactly 4 stops, ordered chronologically across a single day. Be specific to the
     itinerary.groundedPlaceCount = pois.length;
     return NextResponse.json(itinerary);
   } catch (error) {
-    if (error instanceof Error && error.message === "GEMINI_API_KEY is not set") {
+    if (error instanceof Error && error.message === "FAL_KEY is not set") {
       return NextResponse.json(
         {
           error:
-            "The live demo isn't configured yet — add GEMINI_API_KEY to .env.local and restart the dev server.",
+            "The live demo isn't configured yet — add FAL_KEY to .env.local and restart the dev server.",
         },
         { status: 503 },
       );

@@ -77,7 +77,7 @@ export function TryDemo() {
         <Reveal className="text-center">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-teal-300">
             <Sparkles className="h-3.5 w-3.5" />
-            Live demo, powered by Gemini
+            Live demo, powered by GPT via fal.ai
           </span>
           <h2 className="mt-6 text-4xl font-bold tracking-tight sm:text-6xl">
             See it think.
