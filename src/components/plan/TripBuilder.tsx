@@ -8,17 +8,25 @@ import {
   ArrowLeft,
   ArrowRight,
   Bus,
+  CalendarDays,
   Car,
+  Check,
   Cloud,
   CloudFog,
   CloudLightning,
   CloudRain,
   CloudSnow,
+  Compass,
   Footprints,
+  Gauge,
+  Home,
   Loader2,
   MapPin,
   RotateCcw,
+  Sparkles,
+  Star,
   Sun,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
@@ -43,6 +51,7 @@ type Stop = {
   title: string;
   description: string;
   reason: string;
+  estimatedRating?: number;
   lat?: number;
   lon?: number;
 };
@@ -69,8 +78,26 @@ type Plan = {
   groundedPlaceCount?: number;
 };
 
-const STEPS = ["destination", "dates", "companions", "transport", "pace", "interests"] as const;
+const STEPS = [
+  "destination",
+  "accommodation",
+  "dates",
+  "companions",
+  "transport",
+  "pace",
+  "interests",
+] as const;
 type StepKey = (typeof STEPS)[number];
+
+const STEP_ICON: Record<StepKey, LucideIcon> = {
+  destination: MapPin,
+  accommodation: Home,
+  dates: CalendarDays,
+  companions: Users,
+  transport: Compass,
+  pace: Gauge,
+  interests: Sparkles,
+};
 
 const StopMap = dynamic(() => import("./StopMap").then((m) => m.StopMap), {
   ssr: false,
@@ -106,6 +133,7 @@ export function TripBuilder() {
 
   const [stepIndex, setStepIndex] = useState(0);
   const [destination, setDestination] = useState("");
+  const [accommodation, setAccommodation] = useState("");
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(addDaysIso(today, 2));
   const [pace, setPace] = useState<(typeof PACE_OPTIONS)[number]["value"]>("balanced");
@@ -165,6 +193,7 @@ export function TripBuilder() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           destination,
+          accommodation,
           startDate,
           endDate,
           pace,
@@ -360,9 +389,21 @@ export function TripBuilder() {
                                 <p className="text-xs font-medium tracking-wide text-slate-400 uppercase">
                                   {stop.time}
                                 </p>
-                                <p className="mt-1 text-lg font-semibold text-slate-900">
-                                  {stop.title}
-                                </p>
+                                <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                                  <p className="text-lg font-semibold text-slate-900">
+                                    {stop.title}
+                                  </p>
+                                  {stop.estimatedRating != null && (
+                                    <span
+                                      title={t.results.aiEstimate}
+                                      className="inline-flex items-center gap-1 text-xs font-medium text-amber-600"
+                                    >
+                                      <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                                      {stop.estimatedRating.toFixed(1)}
+                                      <span className="text-slate-400">({t.results.aiEstimate})</span>
+                                    </span>
+                                  )}
+                                </div>
                                 <p className="mt-1.5 text-sm text-slate-600">
                                   {stop.description}
                                 </p>
@@ -387,15 +428,49 @@ export function TripBuilder() {
             exit={{ opacity: 0 }}
             className="mx-auto flex min-h-[calc(100vh-73px)] max-w-2xl flex-col justify-center px-6 py-16"
           >
-            <div className="mb-10 flex items-center gap-2">
-              {STEPS.map((s, i) => (
-                <div
-                  key={s}
-                  className={`h-1 flex-1 rounded-full transition-colors ${
-                    i <= stepIndex ? "bg-teal-500" : "bg-slate-100"
-                  }`}
-                />
-              ))}
+            <div className="mb-10">
+              <div className="flex items-center justify-center">
+                {STEPS.map((s, i) => {
+                  const Icon = STEP_ICON[s];
+                  const isCurrent = i === stepIndex;
+                  const isDone = i < stepIndex;
+                  const canJump = i <= stepIndex;
+                  return (
+                    <div key={s} className="flex items-center">
+                      <button
+                        type="button"
+                        onClick={() => canJump && setStepIndex(i)}
+                        disabled={!canJump}
+                        aria-label={s}
+                        aria-current={isCurrent ? "step" : undefined}
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition sm:h-10 sm:w-10 ${
+                          isCurrent
+                            ? "border-teal-500 bg-teal-500 text-white shadow-sm shadow-teal-200"
+                            : isDone
+                              ? "cursor-pointer border-teal-500 bg-teal-50 text-teal-600 hover:bg-teal-100"
+                              : "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-300"
+                        }`}
+                      >
+                        {isDone ? (
+                          <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        ) : (
+                          <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        )}
+                      </button>
+                      {i < STEPS.length - 1 && (
+                        <div
+                          className={`h-0.5 w-2.5 shrink-0 transition-colors sm:w-6 ${
+                            i < stepIndex ? "bg-teal-500" : "bg-slate-100"
+                          }`}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="mt-3 text-center text-sm font-medium text-slate-400">
+                {t.wizard.stepsLeft(STEPS.length - stepIndex - 1)}
+              </p>
             </div>
 
             <AnimatePresence mode="wait">
@@ -425,6 +500,37 @@ export function TripBuilder() {
                           }
                         }}
                         placeholder={t.wizard.destinationPlaceholder}
+                        maxLength={60}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-4 pr-5 pl-12 text-lg text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:bg-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {stepKey === "accommodation" && (
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+                        {t.wizard.accommodationTitle}
+                      </h1>
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">
+                        {t.wizard.optional}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-lg text-slate-600">{t.wizard.accommodationSubtitle}</p>
+                    <div className="relative mt-10">
+                      <Home className="pointer-events-none absolute top-1/2 left-5 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                      <input
+                        autoFocus
+                        value={accommodation}
+                        onChange={(e) => setAccommodation(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            goNext();
+                          }
+                        }}
+                        placeholder={t.wizard.accommodationPlaceholder}
                         maxLength={60}
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-4 pr-5 pl-12 text-lg text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:bg-white focus:outline-none"
                       />

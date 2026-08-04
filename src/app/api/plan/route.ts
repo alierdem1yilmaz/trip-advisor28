@@ -21,6 +21,10 @@ type ItineraryStop = {
   title: string;
   description: string;
   reason: string;
+  // The model's own general-knowledge estimate — not live review data. See
+  // the "estimatedRating" note near the prompt for why it's labeled, not
+  // presented as, a real rating.
+  estimatedRating?: number;
   // Internal only, never shown to the user: the internationally-recognized
   // (English) name of this exact place. OpenTripMap only indexes names in
   // English or Russian, so a Turkish/Spanish `title` (e.g. "Ayasofya") won't
@@ -40,6 +44,7 @@ type ResponseStop = {
   title: string;
   description: string;
   reason: string;
+  estimatedRating?: number;
   lat?: number;
   lon?: number;
 };
@@ -165,17 +170,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const { destination, startDate, endDate, pace, interests, companions, transport, language } =
-    (body ?? {}) as {
-      destination?: unknown;
-      startDate?: unknown;
-      endDate?: unknown;
-      pace?: unknown;
-      interests?: unknown;
-      companions?: unknown;
-      transport?: unknown;
-      language?: unknown;
-    };
+  const {
+    destination,
+    accommodation,
+    startDate,
+    endDate,
+    pace,
+    interests,
+    companions,
+    transport,
+    language,
+  } = (body ?? {}) as {
+    destination?: unknown;
+    accommodation?: unknown;
+    startDate?: unknown;
+    endDate?: unknown;
+    pace?: unknown;
+    interests?: unknown;
+    companions?: unknown;
+    transport?: unknown;
+    language?: unknown;
+  };
   const lang = resolveLanguage(language);
 
   if (typeof destination !== "string" || !destination.trim()) {
@@ -184,6 +199,8 @@ export async function POST(request: Request) {
   if (destination.length > MAX_FIELD_LENGTH) {
     return NextResponse.json({ error: "destination is too long." }, { status: 400 });
   }
+  const accommodationText =
+    typeof accommodation === "string" ? accommodation.trim().slice(0, MAX_FIELD_LENGTH) : "";
 
   if (
     typeof startDate !== "string" ||
@@ -233,17 +250,30 @@ export async function POST(request: Request) {
         .slice(0, MAX_INTERESTS)
     : [];
 
-  const [pois, forecast, center] = await Promise.all([
-    findPois(destination.trim(), interestList, dayCount * 10),
-    getDailyForecast(destination.trim(), startDate, clampedEndDate),
+  // If the traveler gave an accommodation area, ground the whole trip near
+  // it instead of the city center — "staying in Ortaköy" shouldn't produce
+  // a day built around Caddebostan on the other side of the city. Falls
+  // back to the plain destination center if that string doesn't geocode.
+  const accommodationQuery = accommodationText ? `${accommodationText}, ${destination.trim()}` : null;
+  const [accommodationCenter, destinationCenter, forecast] = await Promise.all([
+    accommodationQuery ? geocodeDestination(accommodationQuery) : Promise.resolve(null),
     geocodeDestination(destination.trim()),
+    getDailyForecast(destination.trim(), startDate, clampedEndDate),
   ]);
+  const center = accommodationCenter ?? destinationCenter;
+  const groundedNearAccommodation = !!accommodationCenter;
+
+  const pois = await findPois(destination.trim(), interestList, dayCount * 10, center);
 
   const groundingBlock =
     pois.length > 0
-      ? `Real places actually near "${destination.trim()}" (prefer these by name where they fit naturally; spread them across days, don't reuse the same one twice; you may add other well-known real places too):
+      ? `Real places actually near "${destination.trim()}"${groundedNearAccommodation ? ` (specifically near the traveler's accommodation)` : ""} (prefer these by name where they fit naturally; spread them across days, don't reuse the same one twice; you may add other well-known real places too):
 ${pois.map((p) => `- ${p.name} (${p.kinds})`).join("\n")}`
       : "";
+
+  const accommodationBlock = accommodationText
+    ? `The traveler is staying near "${accommodationText}" in ${destination.trim()}. Favor stops that keep each day's travel reasonably close to this base rather than crossing the whole city and back — this matters most for a walking-based day, but keep it in mind for any transport mode.`
+    : "";
 
   const weatherByDate = new Map((forecast ?? []).map((w) => [w.date, w]));
   const weatherBlock =
@@ -261,12 +291,13 @@ ${forecast
 Generate a full ${dayCount}-day trip to "${destination.trim()}" for ${COMPANION_LABEL[companionsKey]}, running from ${startDate} to ${clampedEndDate}.
 Pace preference: ${PACE_LABEL[paceKey]}.
 Getting around: ${TRANSPORT_LABEL[transportKey]}
+${accommodationBlock}
 ${interestList.length > 0 ? `Traveler interests: ${interestList.join(", ")}.` : ""}
 ${weatherBlock}
 ${groundingBlock}
 
 Respond with ONLY minified JSON matching exactly this shape, no markdown fences:
-{"days": [{"day": number, "theme": string (short theme for the day, e.g. "Old Town & River Views"), "stops": [{"time": string (e.g. "9:00 AM"), "title": string (just the plain place name, nothing else — see rule below), "description": string (max 18 words), "reason": string (max 16 words, why this stop is scheduled here/now, referencing weather or transport when it's the actual reason), "mapQuery": string (the internationally-recognized/English name of this exact place, for map lookup only — never shown to the user, so it's fine for it to differ in language from "title")}]}]}
+{"days": [{"day": number, "theme": string (short theme for the day, e.g. "Old Town & River Views"), "stops": [{"time": string (e.g. "9:00 AM"), "title": string (just the plain place name, nothing else — see rule below), "description": string (max 18 words), "reason": string (max 16 words, why this stop is scheduled here/now, referencing weather or transport when it's the actual reason), "estimatedRating": number (your own best-informed estimate of this place's general quality/reputation on a 1.0-5.0 scale, one decimal place — based on general knowledge, NOT live review data you don't have), "mapQuery": string (the internationally-recognized/English name of this exact place, for map lookup only — never shown to the user, so it's fine for it to differ in language from "title")}]}]}
 
 Exactly ${dayCount} day objects, days numbered 1 to ${dayCount} in order. Each day has exactly 4 stops, ordered chronologically. Vary the stops across days — no repeats. Be specific to the destination — use real or plausible place names, not generic placeholders.
 Critical rule for "title": it must be ONLY the real, plain name of the place, exactly as it would appear on a map or sign — nothing else appended. Never add descriptive suffixes ("... and its courtyard"), alternate names in parentheses, or explanatory text to the title. Any extra context like that belongs in "description" instead, not "title".

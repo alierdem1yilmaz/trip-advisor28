@@ -52,12 +52,13 @@ export async function findPois(
   destination: string,
   interests: string[],
   limit = 12,
+  precomputedCenter?: { lat: number; lon: number } | null,
 ): Promise<Poi[]> {
   const apiKey = process.env.OPENTRIPMAP_API_KEY;
   if (!apiKey) return [];
 
   try {
-    const coords = await geocodeDestination(destination);
+    const coords = precomputedCenter ?? (await geocodeDestination(destination));
     if (!coords) return [];
 
     const kinds = kindsForInterests(interests);

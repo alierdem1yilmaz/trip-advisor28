@@ -88,6 +88,10 @@ export interface Dictionary {
     destinationTitle: string;
     destinationSubtitle: string;
     destinationPlaceholder: string;
+    accommodationTitle: string;
+    accommodationSubtitle: string;
+    accommodationPlaceholder: string;
+    optional: string;
     datesTitle: string;
     datesSubtitle: (horizonDays: number) => string;
     startLabel: string;
@@ -104,6 +108,7 @@ export interface Dictionary {
     back: string;
     next: string;
     buildTrip: string;
+    stepsLeft: (n: number) => string;
   };
   loading: {
     title: string;
@@ -115,6 +120,7 @@ export interface Dictionary {
     day: (n: number) => string;
     why: string;
     planAnother: string;
+    aiEstimate: string;
   };
   chat: {
     greeting: string;
@@ -287,6 +293,11 @@ const en: Dictionary = {
     destinationSubtitle:
       "Tell VoyageAI the shape of your trip. Get a full day-by-day plan, built and explained in one pass.",
     destinationPlaceholder: "Kyoto, Marrakech, Reykjavík…",
+    accommodationTitle: "Where are you staying?",
+    accommodationSubtitle:
+      "Helps VoyageAI keep each day's stops close to your base instead of criss-crossing the whole city.",
+    accommodationPlaceholder: "Neighborhood or hotel name…",
+    optional: "Optional",
     datesTitle: "When are you going?",
     datesSubtitle: (horizonDays) =>
       `Pick real dates. VoyageAI adapts each day to the actual forecast, so trips are capped to the next ${horizonDays} days — as far out as weather forecasting (and weather-aware replanning) reliably goes.`,
@@ -306,6 +317,7 @@ const en: Dictionary = {
     back: "Back",
     next: "Next",
     buildTrip: "Build my trip",
+    stepsLeft: (n) => (n <= 0 ? "Last question" : n === 1 ? "1 question left" : `${n} questions left`),
   },
   loading: {
     title: "Your trip is being planned…",
@@ -318,6 +330,7 @@ const en: Dictionary = {
     day: (n) => `Day ${n}`,
     why: "Why",
     planAnother: "Plan another trip",
+    aiEstimate: "AI estimate, not a live review score",
   },
   chat: {
     greeting:
@@ -491,6 +504,11 @@ const tr: Dictionary = {
     destinationSubtitle:
       "Gezinizin şeklini VoyageAI'ye anlatın. Tek seferde oluşturulmuş ve açıklanmış eksiksiz bir günlük plan alın.",
     destinationPlaceholder: "Kyoto, Marakeş, Reykjavík…",
+    accommodationTitle: "Nerede konaklıyorsunuz?",
+    accommodationSubtitle:
+      "VoyageAI'nin her günün duraklarını tüm şehri arşınlamak yerine kaldığınız yere yakın tutmasına yardımcı olur.",
+    accommodationPlaceholder: "Semt veya otel adı…",
+    optional: "Opsiyonel",
     datesTitle: "Ne zaman gidiyorsunuz?",
     datesSubtitle: (horizonDays) =>
       `Gerçek tarihler seçin. VoyageAI her günü gerçek hava durumu tahminine göre uyarlar, bu yüzden geziler önümüzdeki ${horizonDays} günle sınırlıdır — hava durumu tahmininin (ve hava durumuna duyarlı yeniden planlamanın) güvenilir şekilde ulaşabildiği en uzak nokta budur.`,
@@ -510,6 +528,7 @@ const tr: Dictionary = {
     back: "Geri",
     next: "İleri",
     buildTrip: "Gezimi oluştur",
+    stepsLeft: (n) => (n <= 0 ? "Son soru" : n === 1 ? "1 soru kaldı" : `${n} soru kaldı`),
   },
   loading: {
     title: "Geziniz planlanıyor…",
@@ -522,6 +541,7 @@ const tr: Dictionary = {
     day: (n) => `${n}. Gün`,
     why: "Neden",
     planAnother: "Başka bir gezi planla",
+    aiEstimate: "Yapay zeka tahmini, gerçek yorum puanı değil",
   },
   chat: {
     greeting:
@@ -695,6 +715,11 @@ const es: Dictionary = {
     destinationSubtitle:
       "Cuéntale a VoyageAI la forma de tu viaje. Obtén un plan completo día a día, creado y explicado de una sola vez.",
     destinationPlaceholder: "Kioto, Marrakech, Reikiavik…",
+    accommodationTitle: "¿Dónde te alojas?",
+    accommodationSubtitle:
+      "Ayuda a VoyageAI a mantener las paradas de cada día cerca de tu base, en vez de cruzar toda la ciudad.",
+    accommodationPlaceholder: "Barrio o nombre del hotel…",
+    optional: "Opcional",
     datesTitle: "¿Cuándo viajas?",
     datesSubtitle: (horizonDays) =>
       `Elige fechas reales. VoyageAI adapta cada día al pronóstico real, así que los viajes se limitan a los próximos ${horizonDays} días — hasta donde llega de forma fiable la previsión meteorológica (y la replanificación según el clima).`,
@@ -714,6 +739,7 @@ const es: Dictionary = {
     back: "Atrás",
     next: "Siguiente",
     buildTrip: "Crear mi viaje",
+    stepsLeft: (n) => (n <= 0 ? "Última pregunta" : n === 1 ? "1 pregunta restante" : `${n} preguntas restantes`),
   },
   loading: {
     title: "Tu viaje se está planeando…",
@@ -726,6 +752,7 @@ const es: Dictionary = {
     day: (n) => `Día ${n}`,
     why: "Por qué",
     planAnother: "Planear otro viaje",
+    aiEstimate: "Estimación de la IA, no una puntuación real",
   },
   chat: {
     greeting:
