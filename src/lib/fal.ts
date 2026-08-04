@@ -18,6 +18,9 @@ function getClient(): OpenAI {
 }
 
 export const FAL_MODEL = process.env.FAL_MODEL?.trim() || "openai/gpt-5";
+// A smaller/faster model for latency-sensitive uses like chat — full gpt-5's
+// reasoning is worth the wait for itinerary generation, not for a chat reply.
+export const FAL_CHAT_MODEL = process.env.FAL_CHAT_MODEL?.trim() || "openai/gpt-5-mini";
 
 export async function generateJson<T>(prompt: string): Promise<T> {
   const openai = getClient();
@@ -32,4 +35,23 @@ export async function generateJson<T>(prompt: string): Promise<T> {
     throw new Error("fal.ai returned an empty response");
   }
   return JSON.parse(text) as T;
+}
+
+export type ChatMessage = { role: "user" | "assistant"; content: string };
+
+export async function chatReply(
+  systemPrompt: string,
+  history: ChatMessage[],
+): Promise<string> {
+  const openai = getClient();
+  const completion = await openai.chat.completions.create({
+    model: FAL_CHAT_MODEL,
+    messages: [{ role: "system", content: systemPrompt }, ...history],
+  });
+
+  const text = completion.choices[0]?.message?.content;
+  if (!text) {
+    throw new Error("fal.ai returned an empty response");
+  }
+  return text;
 }
