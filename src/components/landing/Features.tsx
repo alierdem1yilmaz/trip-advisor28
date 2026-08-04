@@ -1,3 +1,5 @@
+"use client";
+
 import {
   CloudSun,
   Gauge,
@@ -9,36 +11,28 @@ import {
   Wand2,
   type LucideIcon,
 } from "lucide-react";
-import { features, type Feature } from "@/data/marketing";
 import { Reveal } from "./Reveal";
+import { useLanguage } from "@/lib/i18n/language-context";
 
-const iconMap: Record<Feature["icon"], LucideIcon> = {
-  route: Route,
-  "cloud-sun": CloudSun,
-  users: Users,
-  utensils: Utensils,
-  sparkles: Sparkles,
-  leaf: Leaf,
-  wand: Wand2,
-  gauge: Gauge,
-};
+// Fixed order matching the icon for each feature in the dictionary's
+// features.items array — icons don't change per language, only the text.
+const ICONS: LucideIcon[] = [Wand2, Route, CloudSun, Gauge, Utensils, Sparkles, Users, Leaf];
 
 export function Features() {
+  const { t } = useLanguage();
+
   return (
     <section id="features" className="mx-auto max-w-6xl px-6 py-24 sm:py-32">
       <Reveal className="mx-auto max-w-2xl text-center">
         <h2 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl dark:text-white">
-          Every travel question, answered before you ask it
+          {t.features.title}
         </h2>
-        <p className="mt-4 text-lg text-slate-600 dark:text-slate-300">
-          Not just a list of attractions, a plan that understands opening hours,
-          weather, crowds, and how tired you&apos;ll be by 4pm.
-        </p>
+        <p className="mt-4 text-lg text-slate-600 dark:text-slate-300">{t.features.subtitle}</p>
       </Reveal>
 
       <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {features.map((feature, index) => {
-          const Icon = iconMap[feature.icon];
+        {t.features.items.map((feature, index) => {
+          const Icon = ICONS[index];
           return (
             <Reveal key={feature.title} delay={(index % 4) * 0.08}>
               <div className="h-full rounded-2xl border border-slate-200 bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-900/5 dark:border-slate-800 dark:bg-slate-900">

@@ -1,18 +1,23 @@
 import { NextResponse } from "next/server";
 import { chatReply, type ChatMessage } from "@/lib/fal";
+import { LANGUAGE_PROMPT_NAME, resolveLanguage } from "@/lib/i18n/dictionaries";
 
 export const runtime = "nodejs";
 
 const MAX_MESSAGES = 20;
 const MAX_MESSAGE_LENGTH = 1000;
 
-const SYSTEM_PROMPT = `You are the VoyageAI assistant, a friendly concierge embedded on the VoyageAI website.
+function systemPrompt(languageName: string): string {
+  return `You are the VoyageAI assistant, a friendly concierge embedded on the VoyageAI website.
 
 VoyageAI is an AI travel planner: "Your smartest travel companion, from planning to exploring." It turns maps, reviews, weather, and transit into one adaptive itinerary. Its core features: an Intelligent Trip Builder (destination, days, pace, interests in, full day-by-day plan out), AI route optimization, dynamic weather replanning, crowd prediction, restaurant intelligence, explainable AI (every stop comes with a "why"), and a Sustainability Mode. It's currently an early-access preview.
 
 Your job here is general help and product questions — "what is this", "how does it work", "is it free", general travel-planning chat. You do NOT have access to any specific trip a visitor has already built; if they ask about "my itinerary" or a specific saved trip, tell them you can't see it here, and point them to the Trip Builder at /plan, where they can generate and view a real day-by-day plan.
 
-Keep replies short (2-4 sentences typically) and conversational. If someone asks you to actually plan a trip, encourage them to use the "Plan my trip" button / /plan page rather than trying to build a full itinerary in chat.`;
+Keep replies short (2-4 sentences typically) and conversational. If someone asks you to actually plan a trip, encourage them to use the "Plan my trip" button / /plan page rather than trying to build a full itinerary in chat.
+
+Always reply in ${languageName}, regardless of what language the user writes in.`;
+}
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -22,10 +27,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const { messages } = (body ?? {}) as { messages?: unknown };
+  const { messages, language } = (body ?? {}) as { messages?: unknown; language?: unknown };
   if (!Array.isArray(messages) || messages.length === 0) {
     return NextResponse.json({ error: "messages is required." }, { status: 400 });
   }
+  const lang = resolveLanguage(language);
 
   const history: ChatMessage[] = [];
   for (const m of messages.slice(-MAX_MESSAGES)) {
@@ -49,7 +55,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const reply = await chatReply(SYSTEM_PROMPT, history);
+    const reply = await chatReply(systemPrompt(LANGUAGE_PROMPT_NAME[lang]), history);
     return NextResponse.json({ reply });
   } catch (error) {
     if (error instanceof Error && error.message === "FAL_KEY is not set") {

@@ -4,22 +4,29 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Loader2, MessageCircle, Send, X } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { useLanguage } from "@/lib/i18n/language-context";
 
 type Message = { role: "user" | "assistant"; content: string };
 
-const GREETING: Message = {
-  role: "assistant",
-  content:
-    "Hi! I'm the VoyageAI assistant. Ask me what VoyageAI is, how it works, or anything travel-planning related — or hit \"Plan my trip\" to build a real itinerary.",
-};
-
 export function ChatWidget() {
+  const { t, language } = useLanguage();
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([GREETING]);
+  const [messages, setMessages] = useState<Message[]>([
+    { role: "assistant", content: t.chat.greeting },
+  ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Re-greet in the new language if the visitor switches before chatting.
+  useEffect(() => {
+    setMessages((prev) =>
+      prev.length === 1 && prev[0].role === "assistant"
+        ? [{ role: "assistant", content: t.chat.greeting }]
+        : prev,
+    );
+  }, [t.chat.greeting]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -40,7 +47,7 @@ export function ChatWidget() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: nextMessages }),
+        body: JSON.stringify({ messages: nextMessages, language }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -68,8 +75,8 @@ export function ChatWidget() {
             <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
               <Logo size={32} />
               <div>
-                <p className="text-sm font-semibold text-slate-900">VoyageAI Assistant</p>
-                <p className="text-xs text-slate-400">Ask about the app or travel planning</p>
+                <p className="text-sm font-semibold text-slate-900">{t.chat.headerTitle}</p>
+                <p className="text-xs text-slate-400">{t.chat.headerSubtitle}</p>
               </div>
             </div>
 
@@ -94,7 +101,7 @@ export function ChatWidget() {
                 <div className="flex justify-start">
                   <span className="flex items-center gap-1.5 rounded-2xl bg-slate-100 px-3.5 py-2 text-sm text-slate-400">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    Thinking…
+                    {t.chat.thinking}
                   </span>
                 </div>
               )}
@@ -109,7 +116,7 @@ export function ChatWidget() {
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask something…"
+                placeholder={t.chat.placeholder}
                 maxLength={500}
                 className="flex-1 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:bg-white focus:outline-none"
               />
@@ -128,7 +135,7 @@ export function ChatWidget() {
 
       <button
         onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Close chat" : "Open chat"}
+        aria-label={open ? t.chat.closeLabel : t.chat.openLabel}
         className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-indigo-600 text-white shadow-lg shadow-indigo-600/25 transition hover:scale-105"
       >
         <AnimatePresence mode="wait" initial={false}>

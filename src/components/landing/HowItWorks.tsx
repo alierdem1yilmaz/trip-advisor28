@@ -1,7 +1,11 @@
-import { steps } from "@/data/marketing";
+"use client";
+
 import { Reveal } from "./Reveal";
+import { useLanguage } from "@/lib/i18n/language-context";
 
 export function HowItWorks() {
+  const { t } = useLanguage();
+
   return (
     <section
       id="how-it-works"
@@ -10,12 +14,12 @@ export function HowItWorks() {
       <div className="mx-auto max-w-6xl px-6">
         <Reveal className="mx-auto max-w-2xl text-center">
           <h2 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl dark:text-white">
-            From idea to itinerary in three steps
+            {t.howItWorks.title}
           </h2>
         </Reveal>
 
         <div className="mt-14 grid gap-8 sm:grid-cols-3">
-          {steps.map((step, index) => (
+          {t.howItWorks.steps.map((step, index) => (
             <Reveal
               key={step.title}
               delay={index * 0.1}

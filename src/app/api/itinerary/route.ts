@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateJson } from "@/lib/fal";
 import { findPois } from "@/lib/opentripmap";
+import { LANGUAGE_PROMPT_NAME, resolveLanguage } from "@/lib/i18n/dictionaries";
 
 export const runtime = "nodejs";
 
@@ -34,11 +35,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const { destination, pace, interests } = (body ?? {}) as {
+  const { destination, pace, interests, language } = (body ?? {}) as {
     destination?: unknown;
     pace?: unknown;
     interests?: unknown;
+    language?: unknown;
   };
+  const lang = resolveLanguage(language);
 
   if (typeof destination !== "string" || !destination.trim()) {
     return NextResponse.json(
@@ -79,7 +82,8 @@ ${groundingBlock}
 Respond with ONLY minified JSON matching exactly this shape, no markdown fences:
 {"summary": string (one sentence framing the day), "stops": [{"time": string (e.g. "9:00 AM"), "title": string (short stop name), "description": string (max 18 words), "reason": string (max 16 words, why this stop is scheduled here/now)}]}
 
-Exactly 4 stops, ordered chronologically across a single day. Be specific to the destination — use real or plausible place names, not generic placeholders.`;
+Exactly 4 stops, ordered chronologically across a single day. Be specific to the destination — use real or plausible place names, not generic placeholders.
+Write all text values (summary, title, description, reason) entirely in ${LANGUAGE_PROMPT_NAME[lang]}. Keep proper place names as they really are.`;
 
   try {
     const itinerary = await generateJson<ItineraryResponse>(prompt);

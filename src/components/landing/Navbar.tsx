@@ -1,13 +1,18 @@
-import { Logo } from "@/components/Logo";
+"use client";
 
-const links = [
-  { href: "#try-it", label: "Try it" },
-  { href: "#features", label: "Features" },
-  { href: "#how-it-works", label: "How it works" },
-  { href: "#reviews", label: "Reviews" },
-];
+import { Logo } from "@/components/Logo";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useLanguage } from "@/lib/i18n/language-context";
 
 export function Navbar() {
+  const { t } = useLanguage();
+  const links = [
+    { href: "#try-it", label: t.nav.tryIt },
+    { href: "#features", label: t.nav.features },
+    { href: "#how-it-works", label: t.nav.howItWorks },
+    { href: "#reviews", label: t.nav.reviews },
+  ];
+
   return (
     <header className="sticky top-0 z-50 border-b border-black/5 bg-white/80 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/80">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
@@ -28,12 +33,15 @@ export function Navbar() {
           ))}
         </div>
 
-        <a
-          href="#waitlist"
-          className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
-        >
-          Get early access
-        </a>
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher />
+          <a
+            href="#waitlist"
+            className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+          >
+            {t.nav.getEarlyAccess}
+          </a>
+        </div>
       </nav>
     </header>
   );

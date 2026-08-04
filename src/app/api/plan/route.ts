@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { generateJson } from "@/lib/fal";
 import { findPois } from "@/lib/opentripmap";
 import { getDailyForecast, type DailyWeather } from "@/lib/weather";
+import { LANGUAGE_PROMPT_NAME, resolveLanguage } from "@/lib/i18n/dictionaries";
 import {
   addDaysIso,
   diffInDaysIso,
@@ -86,7 +87,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const { destination, startDate, endDate, pace, interests, companions, transport } =
+  const { destination, startDate, endDate, pace, interests, companions, transport, language } =
     (body ?? {}) as {
       destination?: unknown;
       startDate?: unknown;
@@ -95,7 +96,9 @@ export async function POST(request: Request) {
       interests?: unknown;
       companions?: unknown;
       transport?: unknown;
+      language?: unknown;
     };
+  const lang = resolveLanguage(language);
 
   if (typeof destination !== "string" || !destination.trim()) {
     return NextResponse.json({ error: "destination is required." }, { status: 400 });
@@ -186,7 +189,8 @@ ${groundingBlock}
 Respond with ONLY minified JSON matching exactly this shape, no markdown fences:
 {"days": [{"day": number, "theme": string (short theme for the day, e.g. "Old Town & River Views"), "stops": [{"time": string (e.g. "9:00 AM"), "title": string (short stop name), "description": string (max 18 words), "reason": string (max 16 words, why this stop is scheduled here/now, referencing weather or transport when it's the actual reason)}]}]}
 
-Exactly ${dayCount} day objects, days numbered 1 to ${dayCount} in order. Each day has exactly 4 stops, ordered chronologically. Vary the stops across days — no repeats. Be specific to the destination — use real or plausible place names, not generic placeholders.`;
+Exactly ${dayCount} day objects, days numbered 1 to ${dayCount} in order. Each day has exactly 4 stops, ordered chronologically. Vary the stops across days — no repeats. Be specific to the destination — use real or plausible place names, not generic placeholders.
+Write all text values (theme, time, title, description, reason) entirely in ${LANGUAGE_PROMPT_NAME[lang]}. Keep proper place names as they really are.`;
 
   try {
     const plan = await generateJson<{ days: ItineraryDay[] }>(prompt);
@@ -198,7 +202,7 @@ Exactly ${dayCount} day objects, days numbered 1 to ${dayCount} in order. Each d
       const w = weatherByDate.get(iso);
       return {
         ...d,
-        date: formatFriendlyIso(iso),
+        date: formatFriendlyIso(iso, lang),
         weather: w
           ? { tempMaxC: w.tempMaxC, tempMinC: w.tempMinC, condition: w.condition, label: w.label }
           : undefined,

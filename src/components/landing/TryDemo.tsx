@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Loader2, MapPin, Sparkles } from "lucide-react";
 import { Reveal } from "./Reveal";
 import { PACE_OPTIONS, INTEREST_OPTIONS } from "@/lib/trip-options";
+import { useLanguage } from "@/lib/i18n/language-context";
 
 type Stop = {
   time: string;
@@ -20,6 +21,7 @@ type Result = {
 };
 
 export function TryDemo() {
+  const { t, language } = useLanguage();
   const [destination, setDestination] = useState("");
   const [pace, setPace] = useState<(typeof PACE_OPTIONS)[number]["value"]>("balanced");
   const [interests, setInterests] = useState<string[]>([]);
@@ -45,7 +47,7 @@ export function TryDemo() {
       const res = await fetch("/api/itinerary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ destination, pace, interests }),
+        body: JSON.stringify({ destination, pace, interests, language }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -70,15 +72,10 @@ export function TryDemo() {
         <Reveal className="text-center">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-teal-300">
             <Sparkles className="h-3.5 w-3.5" />
-            Live demo, powered by GPT via fal.ai
+            {t.tryDemo.badge}
           </span>
-          <h2 className="mt-6 text-4xl font-bold tracking-tight sm:text-6xl">
-            See it think.
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-lg text-slate-300">
-            Type a destination. Watch VoyageAI build a day and explain every
-            decision, live.
-          </p>
+          <h2 className="mt-6 text-4xl font-bold tracking-tight sm:text-6xl">{t.tryDemo.title}</h2>
+          <p className="mx-auto mt-4 max-w-xl text-lg text-slate-300">{t.tryDemo.subtitle}</p>
         </Reveal>
 
         <Reveal delay={0.1} className="mt-14">
@@ -88,7 +85,7 @@ export function TryDemo() {
           >
             <div>
               <label htmlFor="destination" className="mb-2 block text-sm font-medium text-slate-300">
-                Where to?
+                {t.tryDemo.whereTo}
               </label>
               <div className="relative">
                 <MapPin className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -96,7 +93,7 @@ export function TryDemo() {
                   id="destination"
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
-                  placeholder="Kyoto, Marrakech, Reykjavík…"
+                  placeholder={t.tryDemo.placeholder}
                   maxLength={60}
                   required
                   className="w-full rounded-xl border border-white/10 bg-white/5 py-3 pr-4 pl-10 text-sm text-white placeholder:text-slate-500 focus:border-teal-400 focus:outline-none"
@@ -105,7 +102,7 @@ export function TryDemo() {
             </div>
 
             <div>
-              <span className="mb-2 block text-sm font-medium text-slate-300">Pace</span>
+              <span className="mb-2 block text-sm font-medium text-slate-300">{t.tryDemo.pace}</span>
               <div className="flex gap-2">
                 {PACE_OPTIONS.map((option) => (
                   <button
@@ -118,7 +115,7 @@ export function TryDemo() {
                         : "border-white/10 text-slate-300 hover:border-white/25"
                     }`}
                   >
-                    {option.label}
+                    {t.options.pace[option.value]}
                   </button>
                 ))}
               </div>
@@ -126,7 +123,7 @@ export function TryDemo() {
 
             <div>
               <span className="mb-2 block text-sm font-medium text-slate-300">
-                Interests <span className="text-slate-500">(optional)</span>
+                {t.tryDemo.interests} <span className="text-slate-500">{t.tryDemo.optional}</span>
               </span>
               <div className="flex flex-wrap gap-2">
                 {INTEREST_OPTIONS.map((interest) => (
@@ -140,7 +137,7 @@ export function TryDemo() {
                         : "border-white/10 text-slate-300 hover:border-white/25"
                     }`}
                   >
-                    {interest}
+                    {t.options.interests[interest as keyof typeof t.options.interests]}
                   </button>
                 ))}
               </div>
@@ -154,10 +151,10 @@ export function TryDemo() {
               {status === "loading" ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Planning your day…
+                  {t.tryDemo.loadingButton}
                 </>
               ) : (
-                "Generate my day"
+                t.tryDemo.generateButton
               )}
             </button>
           </form>
@@ -186,7 +183,7 @@ export function TryDemo() {
               <p className="text-sm text-teal-300">{result.summary}</p>
               {!!result.groundedPlaceCount && result.groundedPlaceCount > 0 && (
                 <p className="mt-2 text-xs text-slate-400">
-                  Grounded in {result.groundedPlaceCount} real nearby places via OpenTripMap
+                  {t.tryDemo.groundedIn(result.groundedPlaceCount)}
                 </p>
               )}
               <ul className="mt-6 space-y-5">
@@ -204,7 +201,7 @@ export function TryDemo() {
                     <p className="mt-0.5 font-semibold text-white">{stop.title}</p>
                     <p className="mt-1 text-sm text-slate-300">{stop.description}</p>
                     <p className="mt-1.5 text-xs text-indigo-300 italic">
-                      Why: {stop.reason}
+                      {t.tryDemo.why}: {stop.reason}
                     </p>
                   </motion.li>
                 ))}
