@@ -109,6 +109,12 @@ export interface Dictionary {
     next: string;
     buildTrip: string;
     stepsLeft: (n: number) => string;
+    checkingPlace: string;
+    placeFound: (name: string) => string;
+    placeFuzzy: (name: string) => string;
+    placeNotFound: string;
+    placeNotFoundOverridden: string;
+    continueAnyway: string;
   };
   loading: {
     title: string;
@@ -318,6 +324,12 @@ const en: Dictionary = {
     next: "Next",
     buildTrip: "Build my trip",
     stepsLeft: (n) => (n <= 0 ? "Last question" : n === 1 ? "1 question left" : `${n} questions left`),
+    checkingPlace: "Checking…",
+    placeFound: (name) => `Found: ${name}`,
+    placeFuzzy: (name) => `Closest match: ${name} — not an exact match`,
+    placeNotFound: "Couldn't find this place. Double-check the spelling.",
+    placeNotFoundOverridden: "Continuing without verifying this place.",
+    continueAnyway: "Continue anyway",
   },
   loading: {
     title: "Your trip is being planned…",
@@ -529,6 +541,12 @@ const tr: Dictionary = {
     next: "İleri",
     buildTrip: "Gezimi oluştur",
     stepsLeft: (n) => (n <= 0 ? "Son soru" : n === 1 ? "1 soru kaldı" : `${n} soru kaldı`),
+    checkingPlace: "Kontrol ediliyor…",
+    placeFound: (name) => `Bulundu: ${name}`,
+    placeFuzzy: (name) => `En yakın eşleşme: ${name} — tam olarak eşleşmiyor`,
+    placeNotFound: "Bu yer bulunamadı. Yazımı kontrol edin.",
+    placeNotFoundOverridden: "Bu yer doğrulanmadan devam ediliyor.",
+    continueAnyway: "Yine de devam et",
   },
   loading: {
     title: "Geziniz planlanıyor…",
@@ -740,6 +758,12 @@ const es: Dictionary = {
     next: "Siguiente",
     buildTrip: "Crear mi viaje",
     stepsLeft: (n) => (n <= 0 ? "Última pregunta" : n === 1 ? "1 pregunta restante" : `${n} preguntas restantes`),
+    checkingPlace: "Comprobando…",
+    placeFound: (name) => `Encontrado: ${name}`,
+    placeFuzzy: (name) => `Coincidencia más cercana: ${name} — no exacta`,
+    placeNotFound: "No se encontró este lugar. Revisa la ortografía.",
+    placeNotFoundOverridden: "Continuando sin verificar este lugar.",
+    continueAnyway: "Continuar de todos modos",
   },
   loading: {
     title: "Tu viaje se está planeando…",

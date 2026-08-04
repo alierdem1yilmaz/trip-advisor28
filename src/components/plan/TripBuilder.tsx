@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "framer-motion";
@@ -11,6 +11,7 @@ import {
   CalendarDays,
   Car,
   Check,
+  CircleCheck,
   Cloud,
   CloudFog,
   CloudLightning,
@@ -26,6 +27,7 @@ import {
   Sparkles,
   Star,
   Sun,
+  TriangleAlert,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -123,6 +125,110 @@ const TRANSPORT_ICON: Record<(typeof TRANSPORT_OPTIONS)[number]["value"], Lucide
   car: Car,
 };
 
+type PlaceCheckStatus = "idle" | "checking" | "ok" | "fuzzy" | "notfound";
+
+/**
+ * Debounced live validation against the same OpenTripMap toponym lookup
+ * /api/plan itself relies on for grounding and weather — catches a typo
+ * before it silently produces a plan with no real places or forecast,
+ * instead of only surfacing the problem after the full generation call.
+ */
+function usePlaceCheck(query: string) {
+  const [status, setStatus] = useState<PlaceCheckStatus>("idle");
+  const [resolvedName, setResolvedName] = useState("");
+
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      setStatus("idle");
+      setResolvedName("");
+      return;
+    }
+    setStatus("checking");
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/geocode?q=${encodeURIComponent(trimmed)}`, {
+          signal: controller.signal,
+        });
+        const data = await res.json();
+        if (!data.found) {
+          setStatus("notfound");
+          setResolvedName("");
+        } else {
+          setStatus(data.partialMatch ? "fuzzy" : "ok");
+          setResolvedName(data.country ? `${data.name}, ${data.country}` : data.name);
+        }
+      } catch {
+        if (!controller.signal.aborted) setStatus("idle");
+      }
+    }, 500);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [query]);
+
+  return { status, resolvedName };
+}
+
+function PlaceStatusRow({
+  status,
+  resolvedName,
+  override,
+  onContinueAnyway,
+  t,
+}: {
+  status: PlaceCheckStatus;
+  resolvedName: string;
+  override: boolean;
+  onContinueAnyway: () => void;
+  t: ReturnType<typeof useLanguage>["t"];
+}) {
+  if (status === "idle") return null;
+  return (
+    <div className="mt-3 text-sm">
+      {status === "checking" && (
+        <span className="inline-flex items-center gap-1.5 text-slate-400">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          {t.wizard.checkingPlace}
+        </span>
+      )}
+      {status === "ok" && (
+        <span className="inline-flex items-center gap-1.5 text-emerald-600">
+          <CircleCheck className="h-3.5 w-3.5" />
+          {t.wizard.placeFound(resolvedName)}
+        </span>
+      )}
+      {status === "fuzzy" && (
+        <span className="inline-flex items-center gap-1.5 text-amber-600">
+          <TriangleAlert className="h-3.5 w-3.5" />
+          {t.wizard.placeFuzzy(resolvedName)}
+        </span>
+      )}
+      {status === "notfound" && (
+        <span className="inline-flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 text-red-600">
+            <TriangleAlert className="h-3.5 w-3.5" />
+            {t.wizard.placeNotFound}
+          </span>
+          {override ? (
+            <span className="text-xs text-slate-400">{t.wizard.placeNotFoundOverridden}</span>
+          ) : (
+            <button
+              type="button"
+              onClick={onContinueAnyway}
+              className="text-xs text-slate-400 underline decoration-dotted underline-offset-2 hover:text-slate-600"
+            >
+              {t.wizard.continueAnyway}
+            </button>
+          )}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function TripBuilder() {
   const { t, language } = useLanguage();
   const today = useMemo(() => todayIso(), []);
@@ -146,13 +252,28 @@ export function TripBuilder() {
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<Plan | null>(null);
   const [activeDay, setActiveDay] = useState(1);
+  const [destinationOverride, setDestinationOverride] = useState(false);
+  const [accommodationOverride, setAccommodationOverride] = useState(false);
+
+  const destinationCheck = usePlaceCheck(destination);
+  const accommodationQuery = accommodation.trim()
+    ? `${accommodation.trim()}, ${destination.trim()}`
+    : "";
+  const accommodationCheck = usePlaceCheck(accommodationQuery);
 
   const days = Math.max(diffInDaysIso(startDate, endDate) + 1, 1);
   const endMax = addDaysIso(startDate, Math.min(MAX_TRIP_LENGTH_DAYS - 1, WEATHER_FORECAST_HORIZON_DAYS));
 
   const stepKey: StepKey = STEPS[stepIndex];
   const isLastStep = stepIndex === STEPS.length - 1;
-  const canAdvance = stepKey !== "destination" || destination.trim().length > 0;
+  const destinationBlocked = destinationCheck.status === "notfound" && !destinationOverride;
+  const accommodationBlocked =
+    accommodation.trim().length > 0 &&
+    accommodationCheck.status === "notfound" &&
+    !accommodationOverride;
+  const canAdvance =
+    (stepKey !== "destination" || (destination.trim().length > 0 && !destinationBlocked)) &&
+    (stepKey !== "accommodation" || !accommodationBlocked);
 
   function handleStartChange(value: string) {
     setStartDate(value);
@@ -492,7 +613,10 @@ export function TripBuilder() {
                       <input
                         autoFocus
                         value={destination}
-                        onChange={(e) => setDestination(e.target.value)}
+                        onChange={(e) => {
+                          setDestination(e.target.value);
+                          setDestinationOverride(false);
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             e.preventDefault();
@@ -504,6 +628,13 @@ export function TripBuilder() {
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-4 pr-5 pl-12 text-lg text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:bg-white focus:outline-none"
                       />
                     </div>
+                    <PlaceStatusRow
+                      status={destinationCheck.status}
+                      resolvedName={destinationCheck.resolvedName}
+                      override={destinationOverride}
+                      onContinueAnyway={() => setDestinationOverride(true)}
+                      t={t}
+                    />
                   </div>
                 )}
 
@@ -523,7 +654,10 @@ export function TripBuilder() {
                       <input
                         autoFocus
                         value={accommodation}
-                        onChange={(e) => setAccommodation(e.target.value)}
+                        onChange={(e) => {
+                          setAccommodation(e.target.value);
+                          setAccommodationOverride(false);
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             e.preventDefault();
@@ -535,6 +669,15 @@ export function TripBuilder() {
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-4 pr-5 pl-12 text-lg text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:bg-white focus:outline-none"
                       />
                     </div>
+                    {accommodation.trim().length > 0 && (
+                      <PlaceStatusRow
+                        status={accommodationCheck.status}
+                        resolvedName={accommodationCheck.resolvedName}
+                        override={accommodationOverride}
+                        onContinueAnyway={() => setAccommodationOverride(true)}
+                        t={t}
+                      />
+                    )}
                   </div>
                 )}
 

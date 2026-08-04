@@ -24,22 +24,51 @@ function kindsForInterests(interests: string[]): string {
   return mapped.length > 0 ? [...new Set(mapped)].join(",") : DEFAULT_KINDS;
 }
 
-/** Geocode a destination name (city/region) to coordinates. Null on any failure. */
-export async function geocodeDestination(
-  destination: string,
-): Promise<{ lat: number; lon: number } | null> {
+export type PlaceLookup = {
+  lat: number;
+  lon: number;
+  name: string;
+  country: string;
+  // OpenTripMap set this when it couldn't match the query exactly and fell
+  // back to a broader/looser match (e.g. a typo'd or oddly-specific query
+  // resolving to just the city) — surfaced to the wizard so a near-miss can
+  // be shown to the traveler instead of silently swapping in a different place.
+  partialMatch: boolean;
+};
+
+/**
+ * Resolve a free-text place name (city/region) via OpenTripMap's toponym
+ * search, including the fields needed to show the traveler what actually
+ * matched. Null when the key is missing, the name doesn't resolve to
+ * anything, or the request fails.
+ */
+export async function lookupPlace(name: string): Promise<PlaceLookup | null> {
   const apiKey = process.env.OPENTRIPMAP_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey || !name.trim()) return null;
   try {
-    const url = `${BASE_URL}/geoname?name=${encodeURIComponent(destination)}&apikey=${apiKey}`;
+    const url = `${BASE_URL}/geoname?name=${encodeURIComponent(name.trim())}&apikey=${apiKey}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
     if (!res.ok) return null;
     const data = await res.json();
     if (data.status !== "OK" || typeof data.lat !== "number") return null;
-    return { lat: data.lat, lon: data.lon };
+    return {
+      lat: data.lat,
+      lon: data.lon,
+      name: data.name ?? name.trim(),
+      country: data.country ?? "",
+      partialMatch: !!data.partial_match,
+    };
   } catch {
     return null;
   }
+}
+
+/** Geocode a destination name (city/region) to coordinates. Null on any failure. */
+export async function geocodeDestination(
+  destination: string,
+): Promise<{ lat: number; lon: number } | null> {
+  const result = await lookupPlace(destination);
+  return result ? { lat: result.lat, lon: result.lon } : null;
 }
 
 /**
