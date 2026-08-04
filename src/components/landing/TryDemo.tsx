@@ -23,6 +23,7 @@ type Stop = {
 type Result = {
   summary: string;
   stops: Stop[];
+  groundedPlaceCount?: number;
 };
 
 export function TryDemo() {
@@ -190,6 +191,11 @@ export function TryDemo() {
               className="mx-auto mt-10 max-w-2xl rounded-3xl border border-white/10 bg-white/[0.04] p-6 sm:p-8"
             >
               <p className="text-sm text-teal-300">{result.summary}</p>
+              {!!result.groundedPlaceCount && result.groundedPlaceCount > 0 && (
+                <p className="mt-2 text-xs text-slate-400">
+                  Grounded in {result.groundedPlaceCount} real nearby places via OpenTripMap
+                </p>
+              )}
               <ul className="mt-6 space-y-5">
                 {result.stops.map((stop, i) => (
                   <motion.li

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateJson } from "@/lib/gemini";
+import { findPois } from "@/lib/opentripmap";
 
 export const runtime = "nodejs";
 
@@ -13,6 +14,7 @@ type ItineraryStop = {
 type ItineraryResponse = {
   summary: string;
   stops: ItineraryStop[];
+  groundedPlaceCount?: number;
 };
 
 const PACE_LABEL: Record<string, string> = {
@@ -61,10 +63,18 @@ export async function POST(request: Request) {
         .slice(0, MAX_INTERESTS)
     : [];
 
+  const pois = await findPois(destination.trim(), interestList);
+  const groundingBlock =
+    pois.length > 0
+      ? `Real places actually near "${destination.trim()}" (prefer these by name where they fit; you may add well-known others too):
+${pois.map((p) => `- ${p.name} (${p.kinds})`).join("\n")}`
+      : "";
+
   const prompt = `You are the itinerary-planning engine for VoyageAI, an AI travel planner.
 Generate a single sample day (4 stops) for a trip to "${destination.trim()}".
 Pace preference: ${PACE_LABEL[paceKey]}.
 ${interestList.length > 0 ? `Traveler interests: ${interestList.join(", ")}.` : ""}
+${groundingBlock}
 
 Respond with ONLY minified JSON matching exactly this shape, no markdown fences:
 {"summary": string (one sentence framing the day), "stops": [{"time": string (e.g. "9:00 AM"), "title": string (short stop name), "description": string (max 18 words), "reason": string (max 16 words, why this stop is scheduled here/now)}]}
@@ -76,6 +86,7 @@ Exactly 4 stops, ordered chronologically across a single day. Be specific to the
     if (!itinerary?.stops?.length) {
       throw new Error("Malformed itinerary response");
     }
+    itinerary.groundedPlaceCount = pois.length;
     return NextResponse.json(itinerary);
   } catch (error) {
     if (error instanceof Error && error.message === "GEMINI_API_KEY is not set") {
