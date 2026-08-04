@@ -4,14 +4,7 @@ import { useState, type FormEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Loader2, MapPin, Sparkles } from "lucide-react";
 import { Reveal } from "./Reveal";
-
-const PACE_OPTIONS = [
-  { value: "relaxed", label: "Relaxed" },
-  { value: "balanced", label: "Balanced" },
-  { value: "intensive", label: "Intensive" },
-] as const;
-
-const INTEREST_OPTIONS = ["Food", "History", "Art", "Nature", "Nightlife", "Shopping"];
+import { PACE_OPTIONS, INTEREST_OPTIONS } from "@/lib/trip-options";
 
 type Stop = {
   time: string;

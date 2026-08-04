@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowRight, CloudSun, MapPin, Sparkles } from "lucide-react";
 import { Reveal } from "./Reveal";
 
@@ -29,13 +30,13 @@ export function Hero() {
         </p>
 
         <div className="mt-9 flex flex-col items-center gap-4 sm:flex-row">
-          <a
-            href="#try-it"
+          <Link
+            href="/plan"
             className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
           >
-            Try it live
+            Plan my trip
             <ArrowRight className="h-4 w-4" />
-          </a>
+          </Link>
           <a
             href="#how-it-works"
             className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900 dark:border-slate-700 dark:text-slate-200 dark:hover:border-slate-500 dark:hover:text-white"

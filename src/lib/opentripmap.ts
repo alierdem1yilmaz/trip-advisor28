@@ -44,6 +44,7 @@ async function geocode(
 export async function findPois(
   destination: string,
   interests: string[],
+  limit = 12,
 ): Promise<Poi[]> {
   const apiKey = process.env.OPENTRIPMAP_API_KEY;
   if (!apiKey) return [];
@@ -53,8 +54,9 @@ export async function findPois(
     if (!coords) return [];
 
     const kinds = kindsForInterests(interests);
-    const url = `${BASE_URL}/radius?radius=6000&lon=${coords.lon}&lat=${coords.lat}&kinds=${kinds}&limit=20&format=json&apikey=${apiKey}`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    const fetchLimit = Math.min(Math.max(limit, 1), 50);
+    const url = `${BASE_URL}/radius?radius=8000&lon=${coords.lon}&lat=${coords.lat}&kinds=${kinds}&limit=${fetchLimit}&format=json&apikey=${apiKey}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
     if (!res.ok) return [];
 
     const places = (await res.json()) as Array<{
@@ -66,7 +68,7 @@ export async function findPois(
     return places
       .filter((p) => p.name && p.name.trim().length > 0)
       .sort((a, b) => (b.rate ?? 0) - (a.rate ?? 0))
-      .slice(0, 12)
+      .slice(0, fetchLimit)
       .map((p) => ({ name: p.name!.trim(), kinds: p.kinds ?? "", rating: p.rate ?? 0 }));
   } catch {
     return [];
