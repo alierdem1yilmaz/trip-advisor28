@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateJson } from "@/lib/fal";
 import { findPois } from "@/lib/opentripmap";
+import { getDailyForecast, type DailyWeather } from "@/lib/weather";
 import {
   addDaysIso,
   diffInDaysIso,
@@ -27,9 +28,13 @@ type ItineraryDay = {
   stops: ItineraryStop[];
 };
 
+type ResponseDay = ItineraryDay & {
+  weather?: { tempMaxC: number; tempMinC: number; condition: string; label: string };
+};
+
 type PlanResponse = {
   destination: string;
-  days: ItineraryDay[];
+  days: ResponseDay[];
   groundedPlaceCount?: number;
 };
 
@@ -46,6 +51,30 @@ const COMPANION_LABEL: Record<string, string> = {
   friends: "a group of friends",
 };
 
+const TRANSPORT_LABEL: Record<string, string> = {
+  walking:
+    "on foot. Choose stops within easy walking distance of each other each day, in an order that minimizes backtracking and long walks between consecutive stops.",
+  transit:
+    "public transportation (metro, bus, tram). Prefer stops that are well-connected by transit, and sequence them to minimize transfers and travel time between stops.",
+  car: "by car. Sequence stops to minimize total drive time and avoid backtracking. Where relevant, schedule around likely rush-hour traffic (roughly 8-9:30am and 5-7pm on weekdays) — e.g. avoid a cross-town drive right at 6pm if an earlier or later slot works as well.",
+};
+
+function weatherGuidance(w: DailyWeather): string {
+  switch (w.condition) {
+    case "rain":
+    case "storm":
+      return "rain expected — favor indoor or covered stops (museums, markets, galleries) over open-air ones";
+    case "snow":
+      return "snow expected — favor cozy indoor stops, or snow-friendly outdoor spots, and allow extra time for cold-weather logistics";
+    case "clear":
+      return "clear skies — a good day for outdoor landmarks, parks, and walking routes";
+    case "fog":
+      return "fog expected — fine for indoor stops; skip viewpoints that depend on a clear view";
+    default:
+      return "mixed conditions — a flexible day works well with a blend of indoor and outdoor stops";
+  }
+}
+
 const MAX_INTERESTS = 6;
 const MAX_FIELD_LENGTH = 60;
 
@@ -57,14 +86,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const { destination, startDate, endDate, pace, interests, companions } = (body ?? {}) as {
-    destination?: unknown;
-    startDate?: unknown;
-    endDate?: unknown;
-    pace?: unknown;
-    interests?: unknown;
-    companions?: unknown;
-  };
+  const { destination, startDate, endDate, pace, interests, companions, transport } =
+    (body ?? {}) as {
+      destination?: unknown;
+      startDate?: unknown;
+      endDate?: unknown;
+      pace?: unknown;
+      interests?: unknown;
+      companions?: unknown;
+      transport?: unknown;
+    };
 
   if (typeof destination !== "string" || !destination.trim()) {
     return NextResponse.json({ error: "destination is required." }, { status: 400 });
@@ -110,6 +141,8 @@ export async function POST(request: Request) {
   const paceKey = typeof pace === "string" && pace in PACE_LABEL ? pace : "balanced";
   const companionsKey =
     typeof companions === "string" && companions in COMPANION_LABEL ? companions : "solo";
+  const transportKey =
+    typeof transport === "string" && transport in TRANSPORT_LABEL ? transport : "walking";
 
   const interestList = Array.isArray(interests)
     ? interests
@@ -119,21 +152,39 @@ export async function POST(request: Request) {
         .slice(0, MAX_INTERESTS)
     : [];
 
-  const pois = await findPois(destination.trim(), interestList, dayCount * 6);
+  const [pois, forecast] = await Promise.all([
+    findPois(destination.trim(), interestList, dayCount * 6),
+    getDailyForecast(destination.trim(), startDate, clampedEndDate),
+  ]);
+
   const groundingBlock =
     pois.length > 0
       ? `Real places actually near "${destination.trim()}" (prefer these by name where they fit naturally; spread them across days, don't reuse the same one twice; you may add other well-known real places too):
 ${pois.map((p) => `- ${p.name} (${p.kinds})`).join("\n")}`
       : "";
 
+  const weatherByDate = new Map((forecast ?? []).map((w) => [w.date, w]));
+  const weatherBlock =
+    forecast && forecast.length > 0
+      ? `Actual forecast for each day (adapt stop choices to it — this is the whole point of weather-aware planning):
+${forecast
+  .map(
+    (w, i) =>
+      `Day ${i + 1} (${w.date}): ${w.label}, ${w.tempMinC}-${w.tempMaxC}°C — ${weatherGuidance(w)}.`,
+  )
+  .join("\n")}`
+      : "";
+
   const prompt = `You are the itinerary-planning engine for VoyageAI, an AI travel planner.
 Generate a full ${dayCount}-day trip to "${destination.trim()}" for ${COMPANION_LABEL[companionsKey]}, running from ${startDate} to ${clampedEndDate}.
 Pace preference: ${PACE_LABEL[paceKey]}.
+Getting around: ${TRANSPORT_LABEL[transportKey]}
 ${interestList.length > 0 ? `Traveler interests: ${interestList.join(", ")}.` : ""}
+${weatherBlock}
 ${groundingBlock}
 
 Respond with ONLY minified JSON matching exactly this shape, no markdown fences:
-{"days": [{"day": number, "theme": string (short theme for the day, e.g. "Old Town & River Views"), "stops": [{"time": string (e.g. "9:00 AM"), "title": string (short stop name), "description": string (max 18 words), "reason": string (max 16 words, why this stop is scheduled here/now)}]}]}
+{"days": [{"day": number, "theme": string (short theme for the day, e.g. "Old Town & River Views"), "stops": [{"time": string (e.g. "9:00 AM"), "title": string (short stop name), "description": string (max 18 words), "reason": string (max 16 words, why this stop is scheduled here/now, referencing weather or transport when it's the actual reason)}]}]}
 
 Exactly ${dayCount} day objects, days numbered 1 to ${dayCount} in order. Each day has exactly 4 stops, ordered chronologically. Vary the stops across days — no repeats. Be specific to the destination — use real or plausible place names, not generic placeholders.`;
 
@@ -142,13 +193,20 @@ Exactly ${dayCount} day objects, days numbered 1 to ${dayCount} in order. Each d
     if (!plan?.days?.length) {
       throw new Error("Malformed plan response");
     }
-    const daysWithDates = plan.days.map((d) => ({
-      ...d,
-      date: formatFriendlyIso(addDaysIso(startDate, d.day - 1)),
-    }));
+    const daysWithExtras: ResponseDay[] = plan.days.map((d) => {
+      const iso = addDaysIso(startDate, d.day - 1);
+      const w = weatherByDate.get(iso);
+      return {
+        ...d,
+        date: formatFriendlyIso(iso),
+        weather: w
+          ? { tempMaxC: w.tempMaxC, tempMinC: w.tempMinC, condition: w.condition, label: w.label }
+          : undefined,
+      };
+    });
     const response: PlanResponse = {
       destination: destination.trim(),
-      days: daysWithDates,
+      days: daysWithExtras,
       groundedPlaceCount: pois.length,
     };
     return NextResponse.json(response);

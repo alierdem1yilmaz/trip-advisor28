@@ -3,12 +3,29 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Loader2, MapPin, RotateCcw } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Bus,
+  Car,
+  Cloud,
+  CloudFog,
+  CloudLightning,
+  CloudRain,
+  CloudSnow,
+  Footprints,
+  Loader2,
+  MapPin,
+  RotateCcw,
+  Sun,
+  type LucideIcon,
+} from "lucide-react";
 import { Logo } from "@/components/Logo";
 import {
   COMPANION_OPTIONS,
   INTEREST_OPTIONS,
   PACE_OPTIONS,
+  TRANSPORT_OPTIONS,
 } from "@/lib/trip-options";
 import {
   addDaysIso,
@@ -25,11 +42,19 @@ type Stop = {
   reason: string;
 };
 
+type Weather = {
+  tempMaxC: number;
+  tempMinC: number;
+  condition: "clear" | "cloudy" | "fog" | "rain" | "snow" | "storm";
+  label: string;
+};
+
 type Day = {
   day: number;
   date?: string;
   theme: string;
   stops: Stop[];
+  weather?: Weather;
 };
 
 type Plan = {
@@ -38,8 +63,23 @@ type Plan = {
   groundedPlaceCount?: number;
 };
 
-const STEPS = ["destination", "dates", "companions", "pace", "interests"] as const;
+const STEPS = ["destination", "dates", "companions", "transport", "pace", "interests"] as const;
 type StepKey = (typeof STEPS)[number];
+
+const WEATHER_ICON: Record<Weather["condition"], LucideIcon> = {
+  clear: Sun,
+  cloudy: Cloud,
+  fog: CloudFog,
+  rain: CloudRain,
+  snow: CloudSnow,
+  storm: CloudLightning,
+};
+
+const TRANSPORT_ICON: Record<(typeof TRANSPORT_OPTIONS)[number]["value"], LucideIcon> = {
+  walking: Footprints,
+  transit: Bus,
+  car: Car,
+};
 
 export function TripBuilder() {
   const today = useMemo(() => todayIso(), []);
@@ -55,6 +95,8 @@ export function TripBuilder() {
   const [pace, setPace] = useState<(typeof PACE_OPTIONS)[number]["value"]>("balanced");
   const [companions, setCompanions] =
     useState<(typeof COMPANION_OPTIONS)[number]["value"]>("solo");
+  const [transport, setTransport] =
+    useState<(typeof TRANSPORT_OPTIONS)[number]["value"]>("walking");
   const [interests, setInterests] = useState<string[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -105,7 +147,15 @@ export function TripBuilder() {
       const res = await fetch("/api/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ destination, startDate, endDate, pace, interests, companions }),
+        body: JSON.stringify({
+          destination,
+          startDate,
+          endDate,
+          pace,
+          interests,
+          companions,
+          transport,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -188,28 +238,41 @@ export function TripBuilder() {
             </div>
 
             <div className="mt-10 flex justify-center gap-2 overflow-x-auto pb-2">
-              {plan.days.map((d) => (
-                <button
-                  key={d.day}
-                  onClick={() => setActiveDay(d.day)}
-                  className={`shrink-0 rounded-2xl border px-5 py-2 text-center text-sm font-semibold transition ${
-                    activeDay === d.day
-                      ? "border-slate-900 bg-slate-900 text-white"
-                      : "border-slate-200 text-slate-600 hover:border-slate-300"
-                  }`}
-                >
-                  <span className="block">Day {d.day}</span>
-                  {d.date && (
-                    <span
-                      className={`block text-xs font-normal ${
-                        activeDay === d.day ? "text-slate-300" : "text-slate-400"
-                      }`}
-                    >
-                      {d.date}
-                    </span>
-                  )}
-                </button>
-              ))}
+              {plan.days.map((d) => {
+                const WeatherIcon = d.weather ? WEATHER_ICON[d.weather.condition] : null;
+                return (
+                  <button
+                    key={d.day}
+                    onClick={() => setActiveDay(d.day)}
+                    className={`shrink-0 rounded-2xl border px-5 py-2 text-center text-sm font-semibold transition ${
+                      activeDay === d.day
+                        ? "border-slate-900 bg-slate-900 text-white"
+                        : "border-slate-200 text-slate-600 hover:border-slate-300"
+                    }`}
+                  >
+                    <span className="block">Day {d.day}</span>
+                    {d.date && (
+                      <span
+                        className={`block text-xs font-normal ${
+                          activeDay === d.day ? "text-slate-300" : "text-slate-400"
+                        }`}
+                      >
+                        {d.date}
+                      </span>
+                    )}
+                    {d.weather && WeatherIcon && (
+                      <span
+                        className={`mt-1 flex items-center justify-center gap-1 text-xs font-normal ${
+                          activeDay === d.day ? "text-slate-300" : "text-slate-400"
+                        }`}
+                      >
+                        <WeatherIcon className="h-3 w-3" />
+                        {d.weather.tempMaxC}°C
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
             <AnimatePresence mode="wait">
@@ -226,8 +289,21 @@ export function TripBuilder() {
                     <h2 className="text-center text-xl font-semibold text-slate-900">
                       {d.theme}
                     </h2>
-                    {d.date && (
-                      <p className="mt-1 text-center text-sm text-slate-400">{d.date}</p>
+                    {(d.date || d.weather) && (
+                      <p className="mt-1 flex items-center justify-center gap-2 text-center text-sm text-slate-400">
+                        {d.date}
+                        {d.date && d.weather && <span>&middot;</span>}
+                        {d.weather &&
+                          (() => {
+                            const WeatherIcon = WEATHER_ICON[d.weather.condition];
+                            return (
+                              <span className="inline-flex items-center gap-1">
+                                <WeatherIcon className="h-3.5 w-3.5" />
+                                {d.weather.label}, {d.weather.tempMinC}–{d.weather.tempMaxC}°C
+                              </span>
+                            );
+                          })()}
+                      </p>
                     )}
                     <ul className="mt-8 space-y-6">
                       {d.stops.map((stop, i) => (
@@ -376,6 +452,39 @@ export function TripBuilder() {
                           {option.label}
                         </button>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {stepKey === "transport" && (
+                  <div>
+                    <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+                      How will you get around?
+                    </h1>
+                    <p className="mt-3 text-lg text-slate-600">
+                      This changes how stops get chosen and sequenced — on
+                      foot favors stops close together, transit favors
+                      well-connected spots, driving accounts for traffic.
+                    </p>
+                    <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      {TRANSPORT_OPTIONS.map((option) => {
+                        const Icon = TRANSPORT_ICON[option.value];
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setTransport(option.value)}
+                            className={`flex flex-col items-center gap-2 rounded-xl border px-4 py-6 text-base font-medium transition ${
+                              transport === option.value
+                                ? "border-teal-500 bg-teal-50 text-teal-700"
+                                : "border-slate-200 text-slate-600 hover:border-slate-300"
+                            }`}
+                          >
+                            <Icon className="h-6 w-6" />
+                            {option.label}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

@@ -19,3 +19,9 @@ export const COMPANION_OPTIONS = [
   { value: "family", label: "Family" },
   { value: "friends", label: "Friends" },
 ] as const;
+
+export const TRANSPORT_OPTIONS = [
+  { value: "walking", label: "Walking" },
+  { value: "transit", label: "Public transit" },
+  { value: "car", label: "Car" },
+] as const;
