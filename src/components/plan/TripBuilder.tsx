@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { Compass, Loader2, MapPin, RotateCcw } from "lucide-react";
@@ -9,6 +9,13 @@ import {
   INTEREST_OPTIONS,
   PACE_OPTIONS,
 } from "@/lib/trip-options";
+import {
+  addDaysIso,
+  diffInDaysIso,
+  todayIso,
+  MAX_TRIP_LENGTH_DAYS,
+  WEATHER_FORECAST_HORIZON_DAYS,
+} from "@/lib/dates";
 
 type Stop = {
   time: string;
@@ -19,6 +26,7 @@ type Stop = {
 
 type Day = {
   day: number;
+  date?: string;
   theme: string;
   stops: Stop[];
 };
@@ -29,12 +37,16 @@ type Plan = {
   groundedPlaceCount?: number;
 };
 
-const MIN_DAYS = 1;
-const MAX_DAYS = 7;
-
 export function TripBuilder() {
+  const today = useMemo(() => todayIso(), []);
+  const forecastLimit = useMemo(
+    () => addDaysIso(today, WEATHER_FORECAST_HORIZON_DAYS),
+    [today],
+  );
+
   const [destination, setDestination] = useState("");
-  const [days, setDays] = useState(3);
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(addDaysIso(today, 2));
   const [pace, setPace] = useState<(typeof PACE_OPTIONS)[number]["value"]>("balanced");
   const [companions, setCompanions] =
     useState<(typeof COMPANION_OPTIONS)[number]["value"]>("solo");
@@ -43,6 +55,18 @@ export function TripBuilder() {
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<Plan | null>(null);
   const [activeDay, setActiveDay] = useState(1);
+
+  const days = Math.max(diffInDaysIso(startDate, endDate) + 1, 1);
+  const endMax = addDaysIso(startDate, Math.min(MAX_TRIP_LENGTH_DAYS - 1, WEATHER_FORECAST_HORIZON_DAYS));
+
+  function handleStartChange(value: string) {
+    setStartDate(value);
+    // Keep the range valid: end date can't be before the new start, or push
+    // the trip past the 7-day / 16-day-forecast caps.
+    const maxEnd = addDaysIso(value, Math.min(MAX_TRIP_LENGTH_DAYS - 1, WEATHER_FORECAST_HORIZON_DAYS));
+    if (endDate < value) setEndDate(value);
+    else if (endDate > maxEnd) setEndDate(maxEnd);
+  }
 
   function toggleInterest(interest: string) {
     setInterests((prev) =>
@@ -62,7 +86,7 @@ export function TripBuilder() {
       const res = await fetch("/api/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ destination, days, pace, interests, companions }),
+        body: JSON.stringify({ destination, startDate, endDate, pace, interests, companions }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -141,19 +165,40 @@ export function TripBuilder() {
 
               <div>
                 <div className="mb-3 flex items-baseline justify-between">
-                  <span className="text-sm font-medium text-slate-700">Trip length</span>
+                  <span className="text-sm font-medium text-slate-700">Trip dates</span>
                   <span className="text-sm text-slate-500">
                     {days} {days === 1 ? "day" : "days"}
                   </span>
                 </div>
-                <input
-                  type="range"
-                  min={MIN_DAYS}
-                  max={MAX_DAYS}
-                  value={days}
-                  onChange={(e) => setDays(Number(e.target.value))}
-                  className="w-full accent-teal-600"
-                />
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="block">
+                    <span className="mb-1 block text-xs text-slate-400">Start</span>
+                    <input
+                      type="date"
+                      value={startDate}
+                      min={today}
+                      max={forecastLimit}
+                      onChange={(e) => handleStartChange(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 focus:border-teal-500 focus:bg-white focus:outline-none"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-xs text-slate-400">End</span>
+                    <input
+                      type="date"
+                      value={endDate}
+                      min={startDate}
+                      max={endMax}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 focus:border-teal-500 focus:bg-white focus:outline-none"
+                    />
+                  </label>
+                </div>
+                <p className="mt-2 text-xs text-slate-400">
+                  Limited to the next {WEATHER_FORECAST_HORIZON_DAYS} days, up to{" "}
+                  {MAX_TRIP_LENGTH_DAYS} days long — that&apos;s as far out as weather
+                  forecasts (and weather-aware replanning) actually go.
+                </p>
               </div>
 
               <div>
@@ -275,13 +320,22 @@ export function TripBuilder() {
                 <button
                   key={d.day}
                   onClick={() => setActiveDay(d.day)}
-                  className={`shrink-0 rounded-full border px-5 py-2 text-sm font-semibold transition ${
+                  className={`shrink-0 rounded-2xl border px-5 py-2 text-center text-sm font-semibold transition ${
                     activeDay === d.day
                       ? "border-slate-900 bg-slate-900 text-white"
                       : "border-slate-200 text-slate-600 hover:border-slate-300"
                   }`}
                 >
-                  Day {d.day}
+                  <span className="block">Day {d.day}</span>
+                  {d.date && (
+                    <span
+                      className={`block text-xs font-normal ${
+                        activeDay === d.day ? "text-slate-300" : "text-slate-400"
+                      }`}
+                    >
+                      {d.date}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -300,6 +354,9 @@ export function TripBuilder() {
                     <h2 className="text-center text-xl font-semibold text-slate-900">
                       {d.theme}
                     </h2>
+                    {d.date && (
+                      <p className="mt-1 text-center text-sm text-slate-400">{d.date}</p>
+                    )}
                     <ul className="mt-8 space-y-6">
                       {d.stops.map((stop, i) => (
                         <motion.li

@@ -1,6 +1,15 @@
 import { NextResponse } from "next/server";
 import { generateJson } from "@/lib/fal";
 import { findPois } from "@/lib/opentripmap";
+import {
+  addDaysIso,
+  diffInDaysIso,
+  formatFriendlyIso,
+  isValidIsoDate,
+  todayIso,
+  MAX_TRIP_LENGTH_DAYS,
+  WEATHER_FORECAST_HORIZON_DAYS,
+} from "@/lib/dates";
 
 export const runtime = "nodejs";
 
@@ -13,6 +22,7 @@ type ItineraryStop = {
 
 type ItineraryDay = {
   day: number;
+  date?: string;
   theme: string;
   stops: ItineraryStop[];
 };
@@ -36,8 +46,6 @@ const COMPANION_LABEL: Record<string, string> = {
   friends: "a group of friends",
 };
 
-const MAX_DAYS = 7;
-const MIN_DAYS = 1;
 const MAX_INTERESTS = 6;
 const MAX_FIELD_LENGTH = 60;
 
@@ -49,9 +57,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const { destination, days, pace, interests, companions } = (body ?? {}) as {
+  const { destination, startDate, endDate, pace, interests, companions } = (body ?? {}) as {
     destination?: unknown;
-    days?: unknown;
+    startDate?: unknown;
+    endDate?: unknown;
     pace?: unknown;
     interests?: unknown;
     companions?: unknown;
@@ -64,10 +73,39 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "destination is too long." }, { status: 400 });
   }
 
-  const dayCount =
-    typeof days === "number" && Number.isFinite(days)
-      ? Math.min(Math.max(Math.round(days), MIN_DAYS), MAX_DAYS)
-      : 3;
+  if (
+    typeof startDate !== "string" ||
+    typeof endDate !== "string" ||
+    !isValidIsoDate(startDate) ||
+    !isValidIsoDate(endDate)
+  ) {
+    return NextResponse.json(
+      { error: "startDate and endDate are required (YYYY-MM-DD)." },
+      { status: 400 },
+    );
+  }
+
+  const today = todayIso();
+  const forecastLimit = addDaysIso(today, WEATHER_FORECAST_HORIZON_DAYS);
+  if (startDate < today || startDate > forecastLimit || endDate < startDate) {
+    return NextResponse.json(
+      {
+        error: `Trip dates must fall within the next ${WEATHER_FORECAST_HORIZON_DAYS} days, so weather-aware planning stays reliable.`,
+      },
+      { status: 400 },
+    );
+  }
+
+  const dayCount = Math.min(diffInDaysIso(startDate, endDate) + 1, MAX_TRIP_LENGTH_DAYS);
+  const clampedEndDate = addDaysIso(startDate, dayCount - 1);
+  if (clampedEndDate > forecastLimit) {
+    return NextResponse.json(
+      {
+        error: `Trip dates must fall within the next ${WEATHER_FORECAST_HORIZON_DAYS} days, so weather-aware planning stays reliable.`,
+      },
+      { status: 400 },
+    );
+  }
 
   const paceKey = typeof pace === "string" && pace in PACE_LABEL ? pace : "balanced";
   const companionsKey =
@@ -89,7 +127,7 @@ ${pois.map((p) => `- ${p.name} (${p.kinds})`).join("\n")}`
       : "";
 
   const prompt = `You are the itinerary-planning engine for VoyageAI, an AI travel planner.
-Generate a full ${dayCount}-day trip to "${destination.trim()}" for ${COMPANION_LABEL[companionsKey]}.
+Generate a full ${dayCount}-day trip to "${destination.trim()}" for ${COMPANION_LABEL[companionsKey]}, running from ${startDate} to ${clampedEndDate}.
 Pace preference: ${PACE_LABEL[paceKey]}.
 ${interestList.length > 0 ? `Traveler interests: ${interestList.join(", ")}.` : ""}
 ${groundingBlock}
@@ -104,9 +142,13 @@ Exactly ${dayCount} day objects, days numbered 1 to ${dayCount} in order. Each d
     if (!plan?.days?.length) {
       throw new Error("Malformed plan response");
     }
+    const daysWithDates = plan.days.map((d) => ({
+      ...d,
+      date: formatFriendlyIso(addDaysIso(startDate, d.day - 1)),
+    }));
     const response: PlanResponse = {
       destination: destination.trim(),
-      days: plan.days,
+      days: daysWithDates,
       groundedPlaceCount: pois.length,
     };
     return NextResponse.json(response);
