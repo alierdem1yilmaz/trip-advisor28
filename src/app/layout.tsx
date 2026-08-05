@@ -1,16 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, Manrope } from "next/font/google";
 import { ChatWidget } from "@/components/ChatWidget";
 import { LanguageProvider } from "@/lib/i18n/language-context";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Fraunces (warm editorial serif) for display type + Manrope (rounded, friendly
+// grotesk) for body text — a deliberate pairing away from the default
+// create-next-app Geist font, which every unmodified AI-scaffolded Next.js
+// app ships with and is a dead giveaway of template-generated design.
+const fraunces = Fraunces({
+  variable: "--font-display",
   subsets: ["latin"],
+  axes: ["opsz", "SOFT", "WONK"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const manrope = Manrope({
+  variable: "--font-body",
   subsets: ["latin"],
 });
 
@@ -24,9 +29,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${fraunces.variable} ${manrope.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-50">
+      <body className="flex min-h-full flex-col bg-paper text-ink dark:bg-night dark:text-paper">
         <LanguageProvider>
           {children}
           <ChatWidget />

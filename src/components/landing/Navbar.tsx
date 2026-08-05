@@ -14,11 +14,11 @@ export function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 border-b border-black/5 bg-white/80 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/80">
+    <header className="sticky top-0 z-50 border-b border-line bg-paper/85 backdrop-blur-md">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <a href="#top" className="flex items-center gap-2 font-semibold text-slate-900 dark:text-white">
+        <a href="#top" className="flex items-center gap-2 font-semibold text-ink">
           <Logo size={32} />
-          <span className="text-lg">VoyageAI</span>
+          <span className="font-display text-lg">VoyageAI</span>
         </a>
 
         <div className="hidden items-center gap-8 md:flex">
@@ -26,7 +26,7 @@ export function Navbar() {
             <a
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-slate-600 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+              className="text-sm font-medium text-ink-soft transition hover:text-ink"
             >
               {link.label}
             </a>
@@ -37,7 +37,7 @@ export function Navbar() {
           <LanguageSwitcher />
           <a
             href="#waitlist"
-            className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+            className="rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-paper transition hover:bg-accent"
           >
             {t.nav.getEarlyAccess}
           </a>

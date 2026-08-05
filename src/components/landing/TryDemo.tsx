@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Loader2, MapPin, Sparkles } from "lucide-react";
+import { Loader2, MapPin } from "lucide-react";
 import { Reveal } from "./Reveal";
 import { PACE_OPTIONS, INTEREST_OPTIONS } from "@/lib/trip-options";
 import { useLanguage } from "@/lib/i18n/language-context";
@@ -62,33 +62,34 @@ export function TryDemo() {
   }
 
   return (
-    <section id="try-it" className="relative overflow-hidden bg-slate-950 py-24 text-white sm:py-32">
+    <section id="try-it" className="relative overflow-hidden bg-night py-24 text-paper sm:py-32">
       <div
         aria-hidden
-        className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,_rgba(45,212,191,0.18),_transparent_55%),radial-gradient(circle_at_80%_70%,_rgba(99,102,241,0.22),_transparent_55%)]"
+        className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,_rgba(217,164,65,0.12),_transparent_55%),radial-gradient(circle_at_80%_70%,_rgba(217,98,46,0.16),_transparent_55%)]"
       />
 
       <div className="relative mx-auto max-w-5xl px-6">
         <Reveal className="text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-teal-300">
-            <Sparkles className="h-3.5 w-3.5" />
+          <span className="inline-flex items-center gap-2 border-b-2 border-gold pb-1 text-xs font-semibold tracking-wide text-paper/70 uppercase">
             {t.tryDemo.badge}
           </span>
-          <h2 className="mt-6 text-4xl font-bold tracking-tight sm:text-6xl">{t.tryDemo.title}</h2>
-          <p className="mx-auto mt-4 max-w-xl text-lg text-slate-300">{t.tryDemo.subtitle}</p>
+          <h2 className="mt-6 font-display text-4xl font-semibold tracking-tight sm:text-6xl">
+            {t.tryDemo.title}
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-lg text-paper/70">{t.tryDemo.subtitle}</p>
         </Reveal>
 
         <Reveal delay={0.1} className="mt-14">
           <form
             onSubmit={handleSubmit}
-            className="mx-auto flex max-w-2xl flex-col gap-5 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur sm:p-8"
+            className="mx-auto flex max-w-2xl flex-col gap-5 rounded-3xl border border-night-line bg-night-soft/60 p-6 backdrop-blur sm:p-8"
           >
             <div>
-              <label htmlFor="destination" className="mb-2 block text-sm font-medium text-slate-300">
+              <label htmlFor="destination" className="mb-2 block text-sm font-medium text-paper/70">
                 {t.tryDemo.whereTo}
               </label>
               <div className="relative">
-                <MapPin className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <MapPin className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-paper/40" />
                 <input
                   id="destination"
                   value={destination}
@@ -96,13 +97,13 @@ export function TryDemo() {
                   placeholder={t.tryDemo.placeholder}
                   maxLength={60}
                   required
-                  className="w-full rounded-xl border border-white/10 bg-white/5 py-3 pr-4 pl-10 text-sm text-white placeholder:text-slate-500 focus:border-teal-400 focus:outline-none"
+                  className="w-full rounded-xl border border-night-line bg-night/60 py-3 pr-4 pl-10 text-sm text-paper placeholder:text-paper/35 focus:border-gold focus:outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <span className="mb-2 block text-sm font-medium text-slate-300">{t.tryDemo.pace}</span>
+              <span className="mb-2 block text-sm font-medium text-paper/70">{t.tryDemo.pace}</span>
               <div className="flex gap-2">
                 {PACE_OPTIONS.map((option) => (
                   <button
@@ -111,8 +112,8 @@ export function TryDemo() {
                     onClick={() => setPace(option.value)}
                     className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${
                       pace === option.value
-                        ? "border-teal-400 bg-teal-400/15 text-teal-300"
-                        : "border-white/10 text-slate-300 hover:border-white/25"
+                        ? "border-gold bg-gold/15 text-gold"
+                        : "border-night-line text-paper/70 hover:border-paper/30"
                     }`}
                   >
                     {t.options.pace[option.value]}
@@ -122,8 +123,8 @@ export function TryDemo() {
             </div>
 
             <div>
-              <span className="mb-2 block text-sm font-medium text-slate-300">
-                {t.tryDemo.interests} <span className="text-slate-500">{t.tryDemo.optional}</span>
+              <span className="mb-2 block text-sm font-medium text-paper/70">
+                {t.tryDemo.interests} <span className="text-paper/40">{t.tryDemo.optional}</span>
               </span>
               <div className="flex flex-wrap gap-2">
                 {INTEREST_OPTIONS.map((interest) => (
@@ -133,8 +134,8 @@ export function TryDemo() {
                     onClick={() => toggleInterest(interest)}
                     className={`rounded-full border px-3.5 py-1.5 text-sm transition ${
                       interests.includes(interest)
-                        ? "border-indigo-400 bg-indigo-400/15 text-indigo-300"
-                        : "border-white/10 text-slate-300 hover:border-white/25"
+                        ? "border-accent bg-accent/15 text-accent"
+                        : "border-night-line text-paper/70 hover:border-paper/30"
                     }`}
                   >
                     {t.options.interests[interest as keyof typeof t.options.interests]}
@@ -146,7 +147,7 @@ export function TryDemo() {
             <button
               type="submit"
               disabled={status === "loading" || !destination.trim()}
-              className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-paper px-6 py-3 text-sm font-semibold text-ink transition hover:bg-accent hover:text-paper disabled:cursor-not-allowed disabled:opacity-50"
             >
               {status === "loading" ? (
                 <>
@@ -166,7 +167,7 @@ export function TryDemo() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="mx-auto mt-8 max-w-2xl rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-center text-sm text-amber-200"
+              className="mx-auto mt-8 max-w-2xl rounded-2xl border border-gold/25 bg-gold/10 p-4 text-center text-sm text-gold"
             >
               {error}
             </motion.div>
@@ -178,11 +179,11 @@ export function TryDemo() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="mx-auto mt-10 max-w-2xl rounded-3xl border border-white/10 bg-white/[0.04] p-6 sm:p-8"
+              className="mx-auto mt-10 max-w-2xl rounded-3xl border border-night-line bg-night-soft/50 p-6 sm:p-8"
             >
-              <p className="text-sm text-teal-300">{result.summary}</p>
+              <p className="text-sm text-gold">{result.summary}</p>
               {!!result.groundedPlaceCount && result.groundedPlaceCount > 0 && (
-                <p className="mt-2 text-xs text-slate-400">
+                <p className="mt-2 text-xs text-paper/50">
                   {t.tryDemo.groundedIn(result.groundedPlaceCount)}
                 </p>
               )}
@@ -193,14 +194,14 @@ export function TryDemo() {
                     initial={{ opacity: 0, x: -12 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.12 }}
-                    className="border-l-2 border-teal-400/40 pl-4"
+                    className="border-l-2 border-accent/40 pl-4"
                   >
-                    <p className="text-xs font-medium tracking-wide text-slate-400 uppercase">
+                    <p className="text-xs font-medium tracking-wide text-paper/50 uppercase">
                       {stop.time}
                     </p>
-                    <p className="mt-0.5 font-semibold text-white">{stop.title}</p>
-                    <p className="mt-1 text-sm text-slate-300">{stop.description}</p>
-                    <p className="mt-1.5 text-xs text-indigo-300 italic">
+                    <p className="mt-0.5 font-semibold text-paper">{stop.title}</p>
+                    <p className="mt-1 text-sm text-paper/70">{stop.description}</p>
+                    <p className="mt-1.5 text-xs text-gold italic">
                       {t.tryDemo.why}: {stop.reason}
                     </p>
                   </motion.li>

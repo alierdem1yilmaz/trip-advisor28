@@ -1,76 +1,75 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, CloudSun, MapPin, Sparkles } from "lucide-react";
+import { ArrowRight, CloudSun, MapPin } from "lucide-react";
 import { Reveal } from "./Reveal";
+import { DayNightGlobe } from "./DayNightGlobe";
 import { useLanguage } from "@/lib/i18n/language-context";
 
 export function Hero() {
   const { t } = useLanguage();
 
   return (
-    <section id="top" className="relative overflow-hidden">
+    <section id="top" className="relative overflow-hidden bg-paper">
       <div
         aria-hidden
-        className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(45,212,191,0.18),_transparent_60%)] dark:bg-[radial-gradient(circle_at_top,_rgba(79,70,229,0.25),_transparent_60%)]"
+        className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_10%,_rgba(217,98,46,0.10),_transparent_55%)]"
       />
 
-      <div className="mx-auto flex max-w-6xl flex-col items-center px-6 pt-16 pb-20 text-center sm:pt-24 sm:pb-28">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-600/20 bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700 dark:border-teal-400/20 dark:bg-teal-400/10 dark:text-teal-300">
-          <Sparkles className="h-3.5 w-3.5" />
-          {t.hero.badge}
-        </span>
-
-        <h1 className="mt-6 max-w-4xl text-5xl font-bold tracking-tight text-slate-900 sm:text-7xl dark:text-white">
-          {t.hero.headline1}{" "}
-          <span className="bg-gradient-to-r from-teal-500 to-indigo-600 bg-clip-text text-transparent">
-            {t.hero.headline2}
+      <div className="mx-auto grid max-w-6xl items-center gap-16 px-6 pt-16 pb-20 sm:pt-24 sm:pb-28 lg:grid-cols-[1.1fr_1fr] lg:gap-10">
+        <div>
+          <span className="inline-flex items-center gap-2 border-b-2 border-accent pb-1 text-xs font-semibold tracking-wide text-ink-soft uppercase">
+            {t.hero.badge}
           </span>
-        </h1>
 
-        <p className="mt-6 max-w-2xl text-lg text-slate-600 sm:text-xl dark:text-slate-300">
-          {t.hero.subtitle}
-        </p>
+          <h1 className="mt-6 font-display text-5xl leading-[1.05] font-semibold tracking-tight text-ink sm:text-6xl">
+            {t.hero.headline1} <span className="text-accent italic">{t.hero.headline2}</span>
+          </h1>
 
-        <div className="mt-9 flex flex-col items-center gap-4 sm:flex-row">
-          <Link
-            href="/plan"
-            className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
-          >
-            {t.hero.ctaPrimary}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-          <a
-            href="#how-it-works"
-            className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900 dark:border-slate-700 dark:text-slate-200 dark:hover:border-slate-500 dark:hover:text-white"
-          >
-            {t.hero.ctaSecondary}
-          </a>
+          <p className="mt-6 max-w-lg text-lg text-ink-soft">{t.hero.subtitle}</p>
+
+          <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+            <Link
+              href="/plan"
+              className="inline-flex items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-semibold text-paper shadow-lg shadow-ink/10 transition hover:bg-accent"
+            >
+              {t.hero.ctaPrimary}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <a
+              href="#how-it-works"
+              className="inline-flex items-center gap-2 rounded-lg border border-line px-6 py-3 text-sm font-semibold text-ink transition hover:border-ink"
+            >
+              {t.hero.ctaSecondary}
+            </a>
+          </div>
         </div>
 
-        <Reveal delay={0.15} className="mt-16 w-full max-w-2xl rounded-2xl border border-slate-200 bg-white/70 p-5 text-left shadow-xl shadow-slate-900/5 backdrop-blur sm:p-6 dark:border-slate-800 dark:bg-slate-900/70">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
-            <div>
-              <p className="text-xs font-medium tracking-wide text-slate-400 uppercase">
-                {t.hero.mockDay}
-              </p>
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                {t.hero.mockTitle}
-              </p>
+        <Reveal delay={0.1} className="relative">
+          <DayNightGlobe />
+
+          <div className="absolute -bottom-8 -left-8 hidden w-64 rounded-2xl border border-line bg-paper/95 p-4 text-left shadow-xl shadow-ink/10 backdrop-blur sm:block">
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <div>
+                <p className="text-[10px] font-semibold tracking-wide text-ink-faint uppercase">
+                  {t.hero.mockDay}
+                </p>
+                <p className="text-xs font-semibold text-ink">{t.hero.mockTitle}</p>
+              </div>
+              <span className="flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-medium text-accent-dark">
+                <CloudSun className="h-3 w-3" />
+                {t.hero.mockWeather}
+              </span>
             </div>
-            <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 dark:bg-amber-400/10 dark:text-amber-300">
-              <CloudSun className="h-3.5 w-3.5" />
-              {t.hero.mockWeather}
-            </span>
+            <ul className="mt-3 space-y-2 text-xs">
+              {t.hero.mockStops.slice(0, 2).map((stop) => (
+                <li key={stop} className="flex items-start gap-2">
+                  <MapPin className="mt-0.5 h-3 w-3 shrink-0 text-accent" />
+                  <span className="text-ink-soft">{stop}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-          <ul className="mt-4 space-y-3 text-sm">
-            {t.hero.mockStops.map((stop) => (
-              <li key={stop} className="flex items-start gap-3">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-teal-600 dark:text-teal-400" />
-                <span className="text-slate-600 dark:text-slate-300">{stop}</span>
-              </li>
-            ))}
-          </ul>
         </Reveal>
       </div>
     </section>

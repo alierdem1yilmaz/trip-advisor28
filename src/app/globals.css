@@ -1,10 +1,27 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display), Georgia, serif;
+  --font-sans: var(--font-body), Arial, Helvetica, sans-serif;
+
+  /* Warm, travel-brand palette — deliberately not the teal/indigo/slate
+     combination that's become the default "AI SaaS" look. Paper/ink read
+     as sun-bleached map paper; the accent is a sunset terracotta. */
+  --color-paper: #fbf7f0;
+  --color-paper-dim: #f2ead9;
+  --color-ink: #211d1a;
+  --color-ink-soft: #6b6259;
+  --color-ink-faint: #a79e93;
+  --color-line: #e7dfd3;
+  --color-accent: #d9622e;
+  --color-accent-dark: #b84d20;
+  --color-accent-soft: #f6e3d5;
+  --color-gold: #d9a441;
+  --color-night: #1b1712;
+  --color-night-soft: #2a241e;
+  --color-night-line: #3a332b;
 }
 
 body {
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }

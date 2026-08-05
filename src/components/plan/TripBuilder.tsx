@@ -104,7 +104,7 @@ const STEP_ICON: Record<StepKey, LucideIcon> = {
 const StopMap = dynamic(() => import("./StopMap").then((m) => m.StopMap), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full w-full items-center justify-center bg-slate-100 text-sm text-slate-400">
+    <div className="flex h-full w-full items-center justify-center bg-paper-dim text-sm text-ink-faint">
       <Loader2 className="h-5 w-5 animate-spin" />
     </div>
   ),
@@ -189,7 +189,7 @@ function PlaceStatusRow({
   return (
     <div className="mt-3 text-sm">
       {status === "checking" && (
-        <span className="inline-flex items-center gap-1.5 text-slate-400">
+        <span className="inline-flex items-center gap-1.5 text-ink-faint">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
           {t.wizard.checkingPlace}
         </span>
@@ -213,12 +213,12 @@ function PlaceStatusRow({
             {t.wizard.placeNotFound}
           </span>
           {override ? (
-            <span className="text-xs text-slate-400">{t.wizard.placeNotFoundOverridden}</span>
+            <span className="text-xs text-ink-faint">{t.wizard.placeNotFoundOverridden}</span>
           ) : (
             <button
               type="button"
               onClick={onContinueAnyway}
-              className="text-xs text-slate-400 underline decoration-dotted underline-offset-2 hover:text-slate-600"
+              className="text-xs text-ink-faint underline decoration-dotted underline-offset-2 hover:text-ink-soft"
             >
               {t.wizard.continueAnyway}
             </button>
@@ -345,10 +345,10 @@ export function TripBuilder() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <header className="border-b border-slate-100">
+    <div className="min-h-screen bg-paper">
+      <header className="border-b border-line">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
-          <Link href="/" className="flex items-center gap-2 font-semibold text-slate-900">
+          <Link href="/" className="flex items-center gap-2 font-semibold text-ink">
             <Logo size={32} />
             VoyageAI
           </Link>
@@ -356,7 +356,7 @@ export function TripBuilder() {
             {plan && status === "done" && (
               <button
                 onClick={reset}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-slate-900"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft transition hover:text-ink"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 {t.results.planAnother}
@@ -376,11 +376,11 @@ export function TripBuilder() {
             exit={{ opacity: 0 }}
             className="mx-auto flex max-w-2xl flex-col items-center px-6 py-32 text-center sm:py-40"
           >
-            <Loader2 className="h-10 w-10 animate-spin text-teal-600" />
-            <h1 className="mt-6 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            <Loader2 className="h-10 w-10 animate-spin text-accent" />
+            <h1 className="mt-6 text-2xl font-bold tracking-tight text-ink sm:text-3xl">
               {t.loading.title}
             </h1>
-            <p className="mt-3 text-slate-500">{t.loading.subtitle(destination)}</p>
+            <p className="mt-3 text-ink-soft">{t.loading.subtitle(destination)}</p>
           </motion.section>
         ) : status === "done" && plan ? (
           <motion.section
@@ -390,14 +390,14 @@ export function TripBuilder() {
             className="mx-auto max-w-6xl px-6 py-16"
           >
             <div className="text-center">
-              <p className="text-sm font-medium text-teal-600">
+              <p className="text-sm font-medium text-accent">
                 {t.results.dayTrip(plan.days.length)}
               </p>
-              <h1 className="mt-1 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+              <h1 className="mt-1 text-4xl font-bold tracking-tight text-ink sm:text-5xl">
                 {plan.destination}
               </h1>
               {!!plan.groundedPlaceCount && plan.groundedPlaceCount > 0 && (
-                <p className="mt-3 text-sm text-slate-400">
+                <p className="mt-3 text-sm text-ink-faint">
                   {t.results.groundedIn(plan.groundedPlaceCount)}
                 </p>
               )}
@@ -412,15 +412,15 @@ export function TripBuilder() {
                     onClick={() => setActiveDay(d.day)}
                     className={`shrink-0 rounded-2xl border px-5 py-2 text-center text-sm font-semibold transition ${
                       activeDay === d.day
-                        ? "border-slate-900 bg-slate-900 text-white"
-                        : "border-slate-200 text-slate-600 hover:border-slate-300"
+                        ? "border-ink bg-ink text-paper"
+                        : "border-line text-ink-soft hover:border-ink/20"
                     }`}
                   >
                     <span className="block">{t.results.day(d.day)}</span>
                     {d.date && (
                       <span
                         className={`block text-xs font-normal ${
-                          activeDay === d.day ? "text-slate-300" : "text-slate-400"
+                          activeDay === d.day ? "text-paper/60" : "text-ink-faint"
                         }`}
                       >
                         {d.date}
@@ -429,7 +429,7 @@ export function TripBuilder() {
                     {d.weather && WeatherIcon && (
                       <span
                         className={`mt-1 flex items-center justify-center gap-1 text-xs font-normal ${
-                          activeDay === d.day ? "text-slate-300" : "text-slate-400"
+                          activeDay === d.day ? "text-paper/60" : "text-ink-faint"
                         }`}
                       >
                         <WeatherIcon className="h-3 w-3" />
@@ -462,11 +462,11 @@ export function TripBuilder() {
                       exit={{ opacity: 0 }}
                       className="mx-auto mt-10"
                     >
-                      <h2 className="text-center text-xl font-semibold text-slate-900">
+                      <h2 className="text-center text-xl font-semibold text-ink">
                         {d.theme}
                       </h2>
                       {(d.date || d.weather) && (
-                        <p className="mt-1 flex items-center justify-center gap-2 text-center text-sm text-slate-400">
+                        <p className="mt-1 flex items-center justify-center gap-2 text-center text-sm text-ink-faint">
                           {d.date}
                           {d.date && d.weather && <span>&middot;</span>}
                           {d.weather &&
@@ -483,11 +483,11 @@ export function TripBuilder() {
                       )}
 
                       <div className="mt-8 grid gap-6 lg:grid-cols-2">
-                        <div className="h-[420px] overflow-hidden rounded-2xl border border-slate-200 lg:sticky lg:top-6 lg:h-[calc(100vh-8rem)] lg:max-h-[640px]">
+                        <div className="h-[420px] overflow-hidden rounded-2xl border border-line lg:sticky lg:top-6 lg:h-[calc(100vh-8rem)] lg:max-h-[640px]">
                           {mapCenter ? (
                             <StopMap stops={d.stops} center={mapCenter} />
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-slate-50 px-6 text-center text-sm text-slate-400">
+                            <div className="flex h-full w-full items-center justify-center bg-paper-dim px-6 text-center text-sm text-ink-faint">
                               <MapPin className="mr-2 h-4 w-4" />
                               Map unavailable for this trip
                             </div>
@@ -501,17 +501,17 @@ export function TripBuilder() {
                               initial={{ opacity: 0, x: -12 }}
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ delay: i * 0.08 }}
-                              className="flex gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-5"
+                              className="flex gap-3 rounded-2xl border border-line bg-paper-dim p-5"
                             >
-                              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-indigo-600 text-xs font-bold text-white">
+                              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-white">
                                 {i + 1}
                               </span>
                               <div className="min-w-0">
-                                <p className="text-xs font-medium tracking-wide text-slate-400 uppercase">
+                                <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">
                                   {stop.time}
                                 </p>
                                 <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                                  <p className="text-lg font-semibold text-slate-900">
+                                  <p className="text-lg font-semibold text-ink">
                                     {stop.title}
                                   </p>
                                   {stop.estimatedRating != null && (
@@ -521,14 +521,14 @@ export function TripBuilder() {
                                     >
                                       <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
                                       {stop.estimatedRating.toFixed(1)}
-                                      <span className="text-slate-400">({t.results.aiEstimate})</span>
+                                      <span className="text-ink-faint">({t.results.aiEstimate})</span>
                                     </span>
                                   )}
                                 </div>
-                                <p className="mt-1.5 text-sm text-slate-600">
+                                <p className="mt-1.5 text-sm text-ink-soft">
                                   {stop.description}
                                 </p>
-                                <p className="mt-2 text-xs text-indigo-600 italic">
+                                <p className="mt-2 text-xs text-accent-dark italic">
                                   {t.results.why}: {stop.reason}
                                 </p>
                               </div>
@@ -566,10 +566,10 @@ export function TripBuilder() {
                         aria-current={isCurrent ? "step" : undefined}
                         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition sm:h-10 sm:w-10 ${
                           isCurrent
-                            ? "border-teal-500 bg-teal-500 text-white shadow-sm shadow-teal-200"
+                            ? "border-accent bg-accent text-white shadow-sm shadow-accent-soft"
                             : isDone
-                              ? "cursor-pointer border-teal-500 bg-teal-50 text-teal-600 hover:bg-teal-100"
-                              : "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-300"
+                              ? "cursor-pointer border-accent bg-accent-soft text-accent hover:bg-accent-soft"
+                              : "cursor-not-allowed border-line bg-paper-dim text-ink-faint"
                         }`}
                       >
                         {isDone ? (
@@ -581,7 +581,7 @@ export function TripBuilder() {
                       {i < STEPS.length - 1 && (
                         <div
                           className={`h-0.5 w-2.5 shrink-0 transition-colors sm:w-6 ${
-                            i < stepIndex ? "bg-teal-500" : "bg-slate-100"
+                            i < stepIndex ? "bg-accent" : "bg-paper-dim"
                           }`}
                         />
                       )}
@@ -589,7 +589,7 @@ export function TripBuilder() {
                   );
                 })}
               </div>
-              <p className="mt-3 text-center text-sm font-medium text-slate-400">
+              <p className="mt-3 text-center text-sm font-medium text-ink-faint">
                 {t.wizard.stepsLeft(STEPS.length - stepIndex - 1)}
               </p>
             </div>
@@ -604,12 +604,12 @@ export function TripBuilder() {
               >
                 {stepKey === "destination" && (
                   <div>
-                    <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+                    <h1 className="text-4xl font-bold tracking-tight text-ink sm:text-5xl">
                       {t.wizard.destinationTitle}
                     </h1>
-                    <p className="mt-3 text-lg text-slate-600">{t.wizard.destinationSubtitle}</p>
+                    <p className="mt-3 text-lg text-ink-soft">{t.wizard.destinationSubtitle}</p>
                     <div className="relative mt-10">
-                      <MapPin className="pointer-events-none absolute top-1/2 left-5 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                      <MapPin className="pointer-events-none absolute top-1/2 left-5 h-5 w-5 -translate-y-1/2 text-ink-faint" />
                       <input
                         autoFocus
                         value={destination}
@@ -625,7 +625,7 @@ export function TripBuilder() {
                         }}
                         placeholder={t.wizard.destinationPlaceholder}
                         maxLength={60}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-4 pr-5 pl-12 text-lg text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:bg-white focus:outline-none"
+                        className="w-full rounded-2xl border border-line bg-paper-dim py-4 pr-5 pl-12 text-lg text-ink placeholder:text-ink-faint focus:border-accent focus:bg-paper focus:outline-none"
                       />
                     </div>
                     <PlaceStatusRow
@@ -641,16 +641,16 @@ export function TripBuilder() {
                 {stepKey === "accommodation" && (
                   <div>
                     <div className="flex items-center gap-2">
-                      <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+                      <h1 className="text-4xl font-bold tracking-tight text-ink sm:text-5xl">
                         {t.wizard.accommodationTitle}
                       </h1>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">
+                      <span className="rounded-full bg-paper-dim px-2.5 py-1 text-xs font-medium text-ink-soft">
                         {t.wizard.optional}
                       </span>
                     </div>
-                    <p className="mt-3 text-lg text-slate-600">{t.wizard.accommodationSubtitle}</p>
+                    <p className="mt-3 text-lg text-ink-soft">{t.wizard.accommodationSubtitle}</p>
                     <div className="relative mt-10">
-                      <Home className="pointer-events-none absolute top-1/2 left-5 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                      <Home className="pointer-events-none absolute top-1/2 left-5 h-5 w-5 -translate-y-1/2 text-ink-faint" />
                       <input
                         autoFocus
                         value={accommodation}
@@ -666,7 +666,7 @@ export function TripBuilder() {
                         }}
                         placeholder={t.wizard.accommodationPlaceholder}
                         maxLength={60}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-4 pr-5 pl-12 text-lg text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:bg-white focus:outline-none"
+                        className="w-full rounded-2xl border border-line bg-paper-dim py-4 pr-5 pl-12 text-lg text-ink placeholder:text-ink-faint focus:border-accent focus:bg-paper focus:outline-none"
                       />
                     </div>
                     {accommodation.trim().length > 0 && (
@@ -683,15 +683,15 @@ export function TripBuilder() {
 
                 {stepKey === "dates" && (
                   <div>
-                    <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+                    <h1 className="text-4xl font-bold tracking-tight text-ink sm:text-5xl">
                       {t.wizard.datesTitle}
                     </h1>
-                    <p className="mt-3 text-lg text-slate-600">
+                    <p className="mt-3 text-lg text-ink-soft">
                       {t.wizard.datesSubtitle(WEATHER_FORECAST_HORIZON_DAYS)}
                     </p>
                     <div className="mt-10 grid grid-cols-2 gap-4">
                       <label className="block">
-                        <span className="mb-2 block text-sm text-slate-500">
+                        <span className="mb-2 block text-sm text-ink-soft">
                           {t.wizard.startLabel}
                         </span>
                         <input
@@ -700,11 +700,11 @@ export function TripBuilder() {
                           min={today}
                           max={forecastLimit}
                           onChange={(e) => handleStartChange(e.target.value)}
-                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base text-slate-900 focus:border-teal-500 focus:bg-white focus:outline-none"
+                          className="w-full rounded-xl border border-line bg-paper-dim px-4 py-3 text-base text-ink focus:border-accent focus:bg-paper focus:outline-none"
                         />
                       </label>
                       <label className="block">
-                        <span className="mb-2 block text-sm text-slate-500">
+                        <span className="mb-2 block text-sm text-ink-soft">
                           {t.wizard.endLabel}
                         </span>
                         <input
@@ -713,11 +713,11 @@ export function TripBuilder() {
                           min={startDate}
                           max={endMax}
                           onChange={(e) => setEndDate(e.target.value)}
-                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base text-slate-900 focus:border-teal-500 focus:bg-white focus:outline-none"
+                          className="w-full rounded-xl border border-line bg-paper-dim px-4 py-3 text-base text-ink focus:border-accent focus:bg-paper focus:outline-none"
                         />
                       </label>
                     </div>
-                    <p className="mt-4 text-sm font-medium text-teal-600">
+                    <p className="mt-4 text-sm font-medium text-accent">
                       {t.wizard.daysInDestination(days, destination)}
                     </p>
                   </div>
@@ -725,10 +725,10 @@ export function TripBuilder() {
 
                 {stepKey === "companions" && (
                   <div>
-                    <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+                    <h1 className="text-4xl font-bold tracking-tight text-ink sm:text-5xl">
                       {t.wizard.companionsTitle}
                     </h1>
-                    <p className="mt-3 text-lg text-slate-600">{t.wizard.companionsSubtitle}</p>
+                    <p className="mt-3 text-lg text-ink-soft">{t.wizard.companionsSubtitle}</p>
                     <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
                       {COMPANION_OPTIONS.map((option) => (
                         <button
@@ -737,8 +737,8 @@ export function TripBuilder() {
                           onClick={() => setCompanions(option.value)}
                           className={`rounded-xl border px-4 py-4 text-base font-medium transition ${
                             companions === option.value
-                              ? "border-teal-500 bg-teal-50 text-teal-700"
-                              : "border-slate-200 text-slate-600 hover:border-slate-300"
+                              ? "border-accent bg-accent-soft text-accent-dark"
+                              : "border-line text-ink-soft hover:border-ink/20"
                           }`}
                         >
                           {t.options.companions[option.value]}
@@ -750,10 +750,10 @@ export function TripBuilder() {
 
                 {stepKey === "transport" && (
                   <div>
-                    <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+                    <h1 className="text-4xl font-bold tracking-tight text-ink sm:text-5xl">
                       {t.wizard.transportTitle}
                     </h1>
-                    <p className="mt-3 text-lg text-slate-600">{t.wizard.transportSubtitle}</p>
+                    <p className="mt-3 text-lg text-ink-soft">{t.wizard.transportSubtitle}</p>
                     <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-3">
                       {TRANSPORT_OPTIONS.map((option) => {
                         const Icon = TRANSPORT_ICON[option.value];
@@ -764,8 +764,8 @@ export function TripBuilder() {
                             onClick={() => setTransport(option.value)}
                             className={`flex flex-col items-center gap-2 rounded-xl border px-4 py-6 text-base font-medium transition ${
                               transport === option.value
-                                ? "border-teal-500 bg-teal-50 text-teal-700"
-                                : "border-slate-200 text-slate-600 hover:border-slate-300"
+                                ? "border-accent bg-accent-soft text-accent-dark"
+                                : "border-line text-ink-soft hover:border-ink/20"
                             }`}
                           >
                             <Icon className="h-6 w-6" />
@@ -779,10 +779,10 @@ export function TripBuilder() {
 
                 {stepKey === "pace" && (
                   <div>
-                    <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+                    <h1 className="text-4xl font-bold tracking-tight text-ink sm:text-5xl">
                       {t.wizard.paceTitle}
                     </h1>
-                    <p className="mt-3 text-lg text-slate-600">{t.wizard.paceSubtitle}</p>
+                    <p className="mt-3 text-lg text-ink-soft">{t.wizard.paceSubtitle}</p>
                     <div className="mt-10 flex flex-col gap-3 sm:flex-row">
                       {PACE_OPTIONS.map((option) => (
                         <button
@@ -791,8 +791,8 @@ export function TripBuilder() {
                           onClick={() => setPace(option.value)}
                           className={`flex-1 rounded-xl border px-4 py-4 text-base font-medium transition ${
                             pace === option.value
-                              ? "border-teal-500 bg-teal-50 text-teal-700"
-                              : "border-slate-200 text-slate-600 hover:border-slate-300"
+                              ? "border-accent bg-accent-soft text-accent-dark"
+                              : "border-line text-ink-soft hover:border-ink/20"
                           }`}
                         >
                           {t.options.pace[option.value]}
@@ -804,10 +804,10 @@ export function TripBuilder() {
 
                 {stepKey === "interests" && (
                   <div>
-                    <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+                    <h1 className="text-4xl font-bold tracking-tight text-ink sm:text-5xl">
                       {t.wizard.interestsTitle}
                     </h1>
-                    <p className="mt-3 text-lg text-slate-600">{t.wizard.interestsSubtitle}</p>
+                    <p className="mt-3 text-lg text-ink-soft">{t.wizard.interestsSubtitle}</p>
                     <div className="mt-10 flex flex-wrap gap-2.5">
                       {INTEREST_OPTIONS.map((interest) => (
                         <button
@@ -816,8 +816,8 @@ export function TripBuilder() {
                           onClick={() => toggleInterest(interest)}
                           className={`rounded-full border px-5 py-2.5 text-base transition ${
                             interests.includes(interest)
-                              ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-                              : "border-slate-200 text-slate-600 hover:border-slate-300"
+                              ? "border-accent bg-accent-soft text-accent-dark"
+                              : "border-line text-ink-soft hover:border-ink/20"
                           }`}
                         >
                           {t.options.interests[interest as keyof typeof t.options.interests]}
@@ -838,7 +838,7 @@ export function TripBuilder() {
                     type="button"
                     onClick={goBack}
                     disabled={stepIndex === 0}
-                    className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-0"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft transition hover:text-ink disabled:cursor-not-allowed disabled:opacity-0"
                   >
                     <ArrowLeft className="h-4 w-4" />
                     {t.wizard.back}
@@ -848,7 +848,7 @@ export function TripBuilder() {
                     type="button"
                     onClick={goNext}
                     disabled={!canAdvance}
-                    className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-3.5 text-base font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-lg bg-ink px-6 py-3.5 text-base font-semibold text-white transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isLastStep ? t.wizard.buildTrip : t.wizard.next}
                     <ArrowRight className="h-4 w-4" />
