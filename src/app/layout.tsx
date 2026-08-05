@@ -31,7 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${fraunces.variable} ${manrope.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-paper text-ink dark:bg-night dark:text-paper">
+      <body className="flex min-h-full flex-col bg-paper text-ink">
         <LanguageProvider>
           {children}
           <ChatWidget />

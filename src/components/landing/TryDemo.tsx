@@ -70,7 +70,7 @@ export function TryDemo() {
 
       <div className="relative mx-auto max-w-5xl px-6">
         <Reveal className="text-center">
-          <span className="inline-flex items-center gap-2 border-b-2 border-gold pb-1 text-xs font-semibold tracking-wide text-paper/70 uppercase">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/25 bg-gold/10 px-3 py-1 text-xs font-semibold tracking-wide text-gold uppercase">
             {t.tryDemo.badge}
           </span>
           <h2 className="mt-6 font-display text-4xl font-semibold tracking-tight sm:text-6xl">
