@@ -4,6 +4,8 @@ import { findPois, geocodeDestination, resolvePlaceName, type Poi } from "@/lib/
 import { resolvePlaceFoursquare } from "@/lib/foursquare";
 import { getDailyForecast, type DailyWeather } from "@/lib/weather";
 import { LANGUAGE_PROMPT_NAME, resolveLanguage } from "@/lib/i18n/dictionaries";
+import { getCurrentUser } from "@/lib/auth/dal";
+import { hasEnoughTokens, consumeTokens } from "@/lib/plan-limits";
 import {
   addDaysIso,
   diffInDaysIso,
@@ -59,6 +61,9 @@ type PlanResponse = {
   center?: { lat: number; lon: number };
   days: ResponseDay[];
   groundedPlaceCount?: number;
+  // Remaining free trip-days after this generation — omitted for Pro users,
+  // who have no balance to track.
+  tokensRemaining?: number;
 };
 
 /** Case-insensitive, either-direction substring match against the grounded POI list. */
@@ -236,6 +241,25 @@ export async function POST(request: Request) {
     );
   }
 
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: "Sign in to build a trip.", code: "SIGN_IN_REQUIRED" },
+      { status: 401 },
+    );
+  }
+  if (!hasEnoughTokens(user, dayCount)) {
+    return NextResponse.json(
+      {
+        error: `This ${dayCount}-day trip needs ${dayCount} trip-days, but you only have ${user.dayTokens} left this month.`,
+        code: "OUT_OF_TOKENS",
+        tokensRemaining: user.dayTokens,
+        resetsAt: user.tokensResetAt.toISOString(),
+      },
+      { status: 402 },
+    );
+  }
+
   const paceKey = typeof pace === "string" && pace in PACE_LABEL ? pace : "balanced";
   const companionsKey =
     typeof companions === "string" && companions in COMPANION_LABEL ? companions : "solo";
@@ -336,11 +360,18 @@ Write all text values (theme, time, title, description, reason) entirely in ${LA
       }),
     );
 
+    let tokensRemaining: number | undefined;
+    if (user.plan === "standard") {
+      await consumeTokens(user.id, dayCount);
+      tokensRemaining = Math.max(user.dayTokens - dayCount, 0);
+    }
+
     const response: PlanResponse = {
       destination: destination.trim(),
       center: center ?? undefined,
       days: daysWithCoords,
       groundedPlaceCount: pois.length,
+      tokensRemaining,
     };
     return NextResponse.json(response);
   } catch (error) {

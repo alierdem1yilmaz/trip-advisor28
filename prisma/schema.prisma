@@ -1,0 +1,46 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+// IMPORTANT: this Supabase project's "public" schema is SHARED with other,
+// unrelated apps (their tables aren't modeled here at all). Never run
+// `prisma migrate dev` or `prisma db push` against it — both try to
+// reconcile the *entire* schema and will offer to drop those other apps'
+// tables as "drift"/"not in schema". For any future change here, generate
+// the SQL with `prisma migrate diff --from-empty --to-schema prisma/schema.prisma
+// --script` (safe, doesn't touch the DB) and apply only that statement by
+// hand (e.g. via `psql` or a one-off script using DIRECT_URL).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String   @id @default(cuid())
+  // The Auth0 user ID ("sub" claim, e.g. "auth0|abc123") — Auth0 owns
+  // identity/credentials entirely; this table only tracks the app-specific
+  // plan/token state for whoever that identity turns out to be. Provisioned
+  // just-in-time the first time we see a given Auth0 session (see
+  // src/lib/auth/dal.ts), not at a separate "signup" step.
+  auth0Sub      String   @unique
+  email         String   @unique
+  // "standard" (free, token-limited) | "pro" (unlimited). Plain string
+  // rather than an enum — simpler across a provider switch (SQLite has no
+  // native enum type; Postgres does, but a CHECK-backed string is one less
+  // thing to migrate if this changes).
+  plan          String   @default("standard")
+  // Remaining free trip-days for the current monthly cycle. Only meaningful
+  // for plan = "standard"; ignored (never decremented or checked) for "pro".
+  dayTokens     Int      @default(3)
+  // When dayTokens next refills to the monthly allowance. Checked lazily on
+  // each request rather than via a cron job — no background scheduler in
+  // this app, so the reset just happens the next time the user is looked up.
+  tokensResetAt DateTime
+  createdAt     DateTime @default(now())
+}

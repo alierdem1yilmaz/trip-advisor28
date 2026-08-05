@@ -115,6 +115,14 @@ export interface Dictionary {
     placeNotFound: string;
     placeNotFoundOverridden: string;
     continueAnyway: string;
+    tokensLeft: (n: number) => string;
+    unlimitedTokens: string;
+    noTokensTitle: string;
+    noTokensSubtitle: (resetDate: string) => string;
+    upgradeCta: string;
+    signInTitle: string;
+    signInSubtitle: string;
+    signInCta: string;
   };
   loading: {
     title: string;
@@ -136,6 +144,65 @@ export interface Dictionary {
     thinking: string;
     openLabel: string;
     closeLabel: string;
+  };
+  auth: {
+    loginTitle: string;
+    loginSubtitle: string;
+    signupTitle: string;
+    signupSubtitle: string;
+    emailLabel: string;
+    passwordLabel: string;
+    passwordHint: string;
+    loginButton: string;
+    signupButton: string;
+    loggingIn: string;
+    signingUp: string;
+    noAccount: string;
+    haveAccount: string;
+    signupLink: string;
+    loginLink: string;
+    logout: string;
+    account: string;
+  };
+  pricing: {
+    navLabel: string;
+    title: string;
+    subtitle: string;
+    standardName: string;
+    standardPrice: string;
+    standardTagline: string;
+    proName: string;
+    proPrice: string;
+    proTagline: string;
+    betaNote: string;
+    ctaStandard: string;
+    ctaPro: string;
+    currentPlanBadge: string;
+    features: {
+      dayAllowance: string;
+      unlimitedDays: string;
+      tripBuilder: string;
+      weather: string;
+      map: string;
+      chat: string;
+      aiRatings: string;
+      languages: string;
+      tripLength: string;
+      longerTrips: string;
+      prioritySupport: string;
+    };
+  };
+  account: {
+    title: string;
+    planLabel: string;
+    standardPlan: string;
+    proPlan: string;
+    tokensLeft: (n: number) => string;
+    unlimitedTokens: string;
+    resetsOn: (date: string) => string;
+    upgradeButton: string;
+    downgradeButton: string;
+    viewPricing: string;
   };
 }
 
@@ -330,6 +397,15 @@ const en: Dictionary = {
     placeNotFound: "Couldn't find this place. Double-check the spelling.",
     placeNotFoundOverridden: "Continuing without verifying this place.",
     continueAnyway: "Continue anyway",
+    tokensLeft: (n) => (n === 1 ? "1 free trip-day left this month" : `${n} free trip-days left this month`),
+    unlimitedTokens: "Unlimited trip-days (Pro)",
+    noTokensTitle: "You're out of free trip-days",
+    noTokensSubtitle: (resetDate) =>
+      `Your free days refill on ${resetDate}, or upgrade to Pro for unlimited planning right now.`,
+    upgradeCta: "Upgrade to Pro",
+    signInTitle: "Sign in to build a trip",
+    signInSubtitle: "Free accounts get 3 trip-days a month — no card required.",
+    signInCta: "Sign in or create an account",
   },
   loading: {
     title: "Your trip is being planned…",
@@ -353,6 +429,66 @@ const en: Dictionary = {
     thinking: "Thinking…",
     openLabel: "Open chat",
     closeLabel: "Close chat",
+  },
+  auth: {
+    loginTitle: "Welcome back",
+    loginSubtitle: "Sign in to keep planning.",
+    signupTitle: "Create your free account",
+    signupSubtitle: "3 free trip-days a month, no card required.",
+    emailLabel: "Email",
+    passwordLabel: "Password",
+    passwordHint: "At least 8 characters.",
+    loginButton: "Sign in",
+    signupButton: "Create account",
+    loggingIn: "Signing in…",
+    signingUp: "Creating account…",
+    noAccount: "Don't have an account?",
+    haveAccount: "Already have an account?",
+    signupLink: "Sign up",
+    loginLink: "Sign in",
+    logout: "Log out",
+    account: "Account",
+  },
+  pricing: {
+    navLabel: "Pricing",
+    title: "Simple, usage-based pricing",
+    subtitle:
+      "Start free. Upgrade only if you're planning more than a few trip-days a month.",
+    standardName: "Standard",
+    standardPrice: "Free",
+    standardTagline: "For occasional trips.",
+    proName: "Pro",
+    proPrice: "Free during beta",
+    proTagline: "For frequent travelers who don't want to count days.",
+    betaNote: "VoyageAI is in beta — Pro is free for now, no card required. Real pricing lands later.",
+    ctaStandard: "Get started free",
+    ctaPro: "Upgrade to Pro",
+    currentPlanBadge: "Your current plan",
+    features: {
+      dayAllowance: "3 trip-days per month",
+      unlimitedDays: "Unlimited trip-days",
+      tripBuilder: "AI trip builder",
+      weather: "Weather-aware planning",
+      map: "Interactive stop map",
+      chat: "VoyageAI chat assistant",
+      aiRatings: "AI place-quality estimates",
+      languages: "English, Turkish & Spanish",
+      tripLength: "Trips up to 3 days",
+      longerTrips: "Trips up to 7 days",
+      prioritySupport: "Priority support",
+    },
+  },
+  account: {
+    title: "Your account",
+    planLabel: "Plan",
+    standardPlan: "Standard",
+    proPlan: "Pro",
+    tokensLeft: (n) => (n === 1 ? "1 trip-day left" : `${n} trip-days left`),
+    unlimitedTokens: "Unlimited trip-days",
+    resetsOn: (date) => `Refills on ${date}`,
+    upgradeButton: "Upgrade to Pro",
+    downgradeButton: "Switch back to Standard",
+    viewPricing: "Compare plans",
   },
 };
 
@@ -547,6 +683,15 @@ const tr: Dictionary = {
     placeNotFound: "Bu yer bulunamadı. Yazımı kontrol edin.",
     placeNotFoundOverridden: "Bu yer doğrulanmadan devam ediliyor.",
     continueAnyway: "Yine de devam et",
+    tokensLeft: (n) => (n === 1 ? "Bu ay 1 ücretsiz gezi günü kaldı" : `Bu ay ${n} ücretsiz gezi günü kaldı`),
+    unlimitedTokens: "Sınırsız gezi günü (Pro)",
+    noTokensTitle: "Ücretsiz gezi gününüz kalmadı",
+    noTokensSubtitle: (resetDate) =>
+      `Ücretsiz günleriniz ${resetDate} tarihinde yenilenecek, ya da hemen Pro'ya geçerek sınırsız planlama yapabilirsiniz.`,
+    upgradeCta: "Pro'ya geç",
+    signInTitle: "Gezi oluşturmak için giriş yapın",
+    signInSubtitle: "Ücretsiz hesaplar ayda 3 gezi günü kazanır — kredi kartı gerekmez.",
+    signInCta: "Giriş yap veya hesap oluştur",
   },
   loading: {
     title: "Geziniz planlanıyor…",
@@ -570,6 +715,65 @@ const tr: Dictionary = {
     thinking: "Düşünüyor…",
     openLabel: "Sohbeti aç",
     closeLabel: "Sohbeti kapat",
+  },
+  auth: {
+    loginTitle: "Tekrar hoş geldiniz",
+    loginSubtitle: "Planlamaya devam etmek için giriş yapın.",
+    signupTitle: "Ücretsiz hesabınızı oluşturun",
+    signupSubtitle: "Ayda 3 ücretsiz gezi günü, kredi kartı gerekmez.",
+    emailLabel: "E-posta",
+    passwordLabel: "Şifre",
+    passwordHint: "En az 8 karakter.",
+    loginButton: "Giriş yap",
+    signupButton: "Hesap oluştur",
+    loggingIn: "Giriş yapılıyor…",
+    signingUp: "Hesap oluşturuluyor…",
+    noAccount: "Hesabınız yok mu?",
+    haveAccount: "Zaten hesabınız var mı?",
+    signupLink: "Kayıt ol",
+    loginLink: "Giriş yap",
+    logout: "Çıkış yap",
+    account: "Hesap",
+  },
+  pricing: {
+    navLabel: "Fiyatlandırma",
+    title: "Basit, kullanıma dayalı fiyatlandırma",
+    subtitle: "Ücretsiz başlayın. Ayda birkaç gezi gününden fazlasını planlıyorsanız yükseltin.",
+    standardName: "Standart",
+    standardPrice: "Ücretsiz",
+    standardTagline: "Ara sıra seyahat edenler için.",
+    proName: "Pro",
+    proPrice: "Beta sürecinde ücretsiz",
+    proTagline: "Günleri saymak istemeyen sık gezginler için.",
+    betaNote: "VoyageAI beta aşamasında — Pro şu anlık ücretsiz, kredi kartı gerekmez. Gerçek fiyatlandırma daha sonra gelecek.",
+    ctaStandard: "Ücretsiz başla",
+    ctaPro: "Pro'ya geç",
+    currentPlanBadge: "Mevcut planınız",
+    features: {
+      dayAllowance: "Ayda 3 gezi günü",
+      unlimitedDays: "Sınırsız gezi günü",
+      tripBuilder: "Yapay zeka gezi oluşturucu",
+      weather: "Hava durumuna duyarlı planlama",
+      map: "İnteraktif durak haritası",
+      chat: "VoyageAI sohbet asistanı",
+      aiRatings: "Yapay zeka mekan kalite tahminleri",
+      languages: "İngilizce, Türkçe ve İspanyolca",
+      tripLength: "3 güne kadar geziler",
+      longerTrips: "7 güne kadar geziler",
+      prioritySupport: "Öncelikli destek",
+    },
+  },
+  account: {
+    title: "Hesabınız",
+    planLabel: "Plan",
+    standardPlan: "Standart",
+    proPlan: "Pro",
+    tokensLeft: (n) => (n === 1 ? "1 gezi günü kaldı" : `${n} gezi günü kaldı`),
+    unlimitedTokens: "Sınırsız gezi günü",
+    resetsOn: (date) => `${date} tarihinde yenilenir`,
+    upgradeButton: "Pro'ya geç",
+    downgradeButton: "Standart'a geri dön",
+    viewPricing: "Planları karşılaştır",
   },
 };
 
@@ -764,6 +968,15 @@ const es: Dictionary = {
     placeNotFound: "No se encontró este lugar. Revisa la ortografía.",
     placeNotFoundOverridden: "Continuando sin verificar este lugar.",
     continueAnyway: "Continuar de todos modos",
+    tokensLeft: (n) => (n === 1 ? "Queda 1 día de viaje gratis este mes" : `Quedan ${n} días de viaje gratis este mes`),
+    unlimitedTokens: "Días de viaje ilimitados (Pro)",
+    noTokensTitle: "Se acabaron tus días de viaje gratis",
+    noTokensSubtitle: (resetDate) =>
+      `Tus días gratis se renuevan el ${resetDate}, o mejora a Pro ahora mismo para planificar sin límites.`,
+    upgradeCta: "Mejorar a Pro",
+    signInTitle: "Inicia sesión para crear un viaje",
+    signInSubtitle: "Las cuentas gratuitas obtienen 3 días de viaje al mes — sin tarjeta.",
+    signInCta: "Inicia sesión o crea una cuenta",
   },
   loading: {
     title: "Tu viaje se está planeando…",
@@ -787,6 +1000,65 @@ const es: Dictionary = {
     thinking: "Pensando…",
     openLabel: "Abrir chat",
     closeLabel: "Cerrar chat",
+  },
+  auth: {
+    loginTitle: "Bienvenido de nuevo",
+    loginSubtitle: "Inicia sesión para seguir planeando.",
+    signupTitle: "Crea tu cuenta gratuita",
+    signupSubtitle: "3 días de viaje gratis al mes, sin tarjeta.",
+    emailLabel: "Correo electrónico",
+    passwordLabel: "Contraseña",
+    passwordHint: "Al menos 8 caracteres.",
+    loginButton: "Iniciar sesión",
+    signupButton: "Crear cuenta",
+    loggingIn: "Iniciando sesión…",
+    signingUp: "Creando cuenta…",
+    noAccount: "¿No tienes una cuenta?",
+    haveAccount: "¿Ya tienes una cuenta?",
+    signupLink: "Regístrate",
+    loginLink: "Inicia sesión",
+    logout: "Cerrar sesión",
+    account: "Cuenta",
+  },
+  pricing: {
+    navLabel: "Precios",
+    title: "Precios simples, según el uso",
+    subtitle: "Empieza gratis. Mejora solo si planeas más de unos pocos días de viaje al mes.",
+    standardName: "Estándar",
+    standardPrice: "Gratis",
+    standardTagline: "Para viajes ocasionales.",
+    proName: "Pro",
+    proPrice: "Gratis durante la beta",
+    proTagline: "Para viajeros frecuentes que no quieren contar días.",
+    betaNote: "VoyageAI está en beta — Pro es gratis por ahora, sin tarjeta. El precio real llegará más adelante.",
+    ctaStandard: "Empieza gratis",
+    ctaPro: "Mejorar a Pro",
+    currentPlanBadge: "Tu plan actual",
+    features: {
+      dayAllowance: "3 días de viaje al mes",
+      unlimitedDays: "Días de viaje ilimitados",
+      tripBuilder: "Creador de viajes con IA",
+      weather: "Planificación según el clima",
+      map: "Mapa interactivo de paradas",
+      chat: "Asistente de chat de VoyageAI",
+      aiRatings: "Estimaciones de calidad con IA",
+      languages: "Inglés, turco y español",
+      tripLength: "Viajes de hasta 3 días",
+      longerTrips: "Viajes de hasta 7 días",
+      prioritySupport: "Soporte prioritario",
+    },
+  },
+  account: {
+    title: "Tu cuenta",
+    planLabel: "Plan",
+    standardPlan: "Estándar",
+    proPlan: "Pro",
+    tokensLeft: (n) => (n === 1 ? "Queda 1 día de viaje" : `Quedan ${n} días de viaje`),
+    unlimitedTokens: "Días de viaje ilimitados",
+    resetsOn: (date) => `Se renueva el ${date}`,
+    upgradeButton: "Mejorar a Pro",
+    downgradeButton: "Volver a Estándar",
+    viewPricing: "Comparar planes",
   },
 };
 

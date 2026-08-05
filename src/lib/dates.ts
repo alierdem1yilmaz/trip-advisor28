@@ -32,7 +32,7 @@ export function diffInDaysIso(startIso: string, endIso: string): number {
   return Math.round((end.getTime() - start.getTime()) / 86_400_000);
 }
 
-const DATE_LOCALE: Record<string, string> = { en: "en-US", tr: "tr-TR", es: "es-ES" };
+export const DATE_LOCALE: Record<string, string> = { en: "en-US", tr: "tr-TR", es: "es-ES" };
 
 export function formatFriendlyIso(iso: string, language = "en"): string {
   const d = new Date(`${iso}T00:00:00`);

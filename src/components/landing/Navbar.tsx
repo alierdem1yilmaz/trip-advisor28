@@ -1,11 +1,14 @@
 "use client";
 
+import Link from "next/link";
+import { useUser } from "@auth0/nextjs-auth0";
 import { Logo } from "@/components/Logo";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useLanguage } from "@/lib/i18n/language-context";
 
 export function Navbar() {
   const { t } = useLanguage();
+  const { user, isLoading } = useUser();
   const links = [
     { href: "#try-it", label: t.nav.tryIt },
     { href: "#features", label: t.nav.features },
@@ -31,16 +34,31 @@ export function Navbar() {
               {link.label}
             </a>
           ))}
+          <Link
+            href="/pricing"
+            className="text-sm font-medium text-ink-soft transition hover:text-ink"
+          >
+            {t.pricing.navLabel}
+          </Link>
         </div>
 
         <div className="flex items-center gap-3">
           <LanguageSwitcher />
-          <a
-            href="#waitlist"
-            className="rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-paper transition hover:bg-accent"
-          >
-            {t.nav.getEarlyAccess}
-          </a>
+          {!isLoading && user ? (
+            <Link
+              href="/account"
+              className="rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-paper transition hover:bg-accent"
+            >
+              {t.auth.account}
+            </Link>
+          ) : (
+            <a
+              href="/auth/login"
+              className="rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-paper transition hover:bg-accent"
+            >
+              {t.auth.loginLink}
+            </a>
+          )}
         </div>
       </nav>
     </header>

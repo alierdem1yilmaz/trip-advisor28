@@ -44,6 +44,7 @@ import {
   addDaysIso,
   diffInDaysIso,
   todayIso,
+  DATE_LOCALE,
   MAX_TRIP_LENGTH_DAYS,
   WEATHER_FORECAST_HORIZON_DAYS,
 } from "@/lib/dates";
@@ -229,7 +230,13 @@ function PlaceStatusRow({
   );
 }
 
-export function TripBuilder() {
+type CurrentUser = {
+  plan: "standard" | "pro";
+  dayTokens: number;
+  tokensResetAt: string;
+};
+
+export function TripBuilder({ user }: { user: CurrentUser | null }) {
   const { t, language } = useLanguage();
   const today = useMemo(() => todayIso(), []);
   const forecastLimit = useMemo(
@@ -248,9 +255,11 @@ export function TripBuilder() {
   const [transport, setTransport] =
     useState<(typeof TRANSPORT_OPTIONS)[number]["value"]>("walking");
   const [interests, setInterests] = useState<string[]>([]);
-  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error" | "no-tokens">("idle");
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<Plan | null>(null);
+  const [tokensLeft, setTokensLeft] = useState(user?.dayTokens ?? 0);
+  const [noTokensResetAt, setNoTokensResetAt] = useState<string | null>(null);
   const [activeDay, setActiveDay] = useState(1);
   const [destinationOverride, setDestinationOverride] = useState(false);
   const [accommodationOverride, setAccommodationOverride] = useState(false);
@@ -326,10 +335,20 @@ export function TripBuilder() {
       });
       const data = await res.json();
       if (!res.ok) {
+        if (data?.code === "SIGN_IN_REQUIRED") {
+          window.location.href = "/auth/login";
+          return;
+        }
+        if (data?.code === "OUT_OF_TOKENS") {
+          setNoTokensResetAt(data.resetsAt ?? null);
+          setStatus("no-tokens");
+          return;
+        }
         throw new Error(data?.error ?? "Something went wrong.");
       }
       setPlan(data);
       setActiveDay(1);
+      if (typeof data.tokensRemaining === "number") setTokensLeft(data.tokensRemaining);
       setStatus("done");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -341,7 +360,36 @@ export function TripBuilder() {
     setPlan(null);
     setStatus("idle");
     setError(null);
+    setNoTokensResetAt(null);
     setStepIndex(0);
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-paper">
+        <header className="border-b border-line">
+          <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
+            <Link href="/" className="flex items-center gap-2 font-semibold text-ink">
+              <Logo size={32} />
+              VoyageAI
+            </Link>
+            <LanguageSwitcher />
+          </div>
+        </header>
+        <div className="mx-auto flex min-h-[calc(100vh-73px)] max-w-md flex-col justify-center px-6 py-16 text-center">
+          <h1 className="font-display text-4xl font-semibold tracking-tight text-ink">
+            {t.wizard.signInTitle}
+          </h1>
+          <p className="mt-3 text-lg text-ink-soft">{t.wizard.signInSubtitle}</p>
+          <a
+            href="/auth/login"
+            className="mx-auto mt-9 inline-flex items-center gap-2 rounded-lg bg-ink px-6 py-3.5 text-base font-semibold text-paper transition hover:bg-accent"
+          >
+            {t.wizard.signInCta}
+          </a>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -362,13 +410,54 @@ export function TripBuilder() {
                 {t.results.planAnother}
               </button>
             )}
+            <Link
+              href="/account"
+              className="hidden text-sm font-medium text-ink-soft transition hover:text-ink sm:inline"
+            >
+              {user.plan === "pro" ? t.wizard.unlimitedTokens : t.wizard.tokensLeft(tokensLeft)}
+            </Link>
             <LanguageSwitcher />
           </div>
         </div>
       </header>
 
       <AnimatePresence mode="wait">
-        {status === "loading" ? (
+        {status === "no-tokens" ? (
+          <motion.section
+            key="no-tokens"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="mx-auto flex max-w-md flex-col items-center px-6 py-32 text-center sm:py-40"
+          >
+            <h1 className="font-display text-3xl font-semibold tracking-tight text-ink">
+              {t.wizard.noTokensTitle}
+            </h1>
+            <p className="mt-3 text-ink-soft">
+              {t.wizard.noTokensSubtitle(
+                noTokensResetAt
+                  ? new Intl.DateTimeFormat(DATE_LOCALE[language] ?? "en-US", {
+                      month: "long",
+                      day: "numeric",
+                    }).format(new Date(noTokensResetAt))
+                  : "",
+              )}
+            </p>
+            <Link
+              href="/pricing"
+              className="mt-8 inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3.5 text-base font-semibold text-paper transition hover:bg-accent-dark"
+            >
+              {t.wizard.upgradeCta}
+            </Link>
+            <button
+              type="button"
+              onClick={reset}
+              className="mt-4 text-sm font-medium text-ink-soft hover:text-ink"
+            >
+              {t.wizard.back}
+            </button>
+          </motion.section>
+        ) : status === "loading" ? (
           <motion.section
             key="loading"
             initial={{ opacity: 0 }}
