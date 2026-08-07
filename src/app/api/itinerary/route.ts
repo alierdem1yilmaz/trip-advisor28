@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { generateJson } from "@/lib/fal";
 import { findPois } from "@/lib/opentripmap";
 import { LANGUAGE_PROMPT_NAME, resolveLanguage } from "@/lib/i18n/dictionaries";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -26,8 +27,17 @@ const PACE_LABEL: Record<string, string> = {
 
 const MAX_INTERESTS = 6;
 const MAX_FIELD_LENGTH = 60;
+// This demo endpoint is public (no sign-in, no dayTokens) — capped per IP so
+// it can't be turned into a free, unlimited LLM relay.
+const RATE_LIMIT = 5;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 
 export async function POST(request: Request) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  if (!checkRateLimit(`itinerary:${ip}`, RATE_LIMIT, RATE_LIMIT_WINDOW_MS)) {
+    return NextResponse.json({ error: "Too many requests — try again later." }, { status: 429 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();

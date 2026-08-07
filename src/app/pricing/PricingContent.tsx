@@ -65,6 +65,7 @@ export function PricingContent({
             {!isSignedIn ? (
               <a
                 href="/auth/login?screen_hint=signup"
+                rel="nofollow"
                 className="mt-8 block rounded-lg border border-ink px-6 py-3 text-center text-sm font-semibold text-ink transition hover:bg-paper-dim"
               >
                 {t.pricing.ctaStandard}
@@ -120,6 +121,7 @@ export function PricingContent({
             {plan !== "pro" && !isSignedIn && (
               <a
                 href="/auth/login?screen_hint=signup"
+                rel="nofollow"
                 className="mt-8 block rounded-lg bg-accent px-6 py-3 text-center text-sm font-semibold text-paper transition hover:bg-accent-dark"
               >
                 {t.pricing.ctaPro}

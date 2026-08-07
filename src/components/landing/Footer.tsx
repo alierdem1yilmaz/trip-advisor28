@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { useLanguage } from "@/lib/i18n/language-context";
 
@@ -13,6 +14,12 @@ export function Footer() {
           <Logo size={20} />
           VoyageAI
         </div>
+        <Link
+          href="/feedback"
+          className="text-sm font-medium text-ink-soft transition hover:text-ink"
+        >
+          {t.footer.feedbackLink}
+        </Link>
         <p className="text-xs text-ink-faint">
           {t.footer.tagline(new Date().getFullYear())}
         </p>

@@ -40,6 +40,20 @@ export function Navbar() {
           >
             {t.pricing.navLabel}
           </Link>
+          <Link
+            href="/hotels"
+            className="text-sm font-medium text-ink-soft transition hover:text-ink"
+          >
+            {t.nav.hotelsLink}
+          </Link>
+          {!isLoading && user && (
+            <Link
+              href="/saved-trips"
+              className="text-sm font-medium text-ink-soft transition hover:text-ink"
+            >
+              {t.savedTrips.navLink}
+            </Link>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -54,6 +68,7 @@ export function Navbar() {
           ) : (
             <a
               href="/auth/login"
+              rel="nofollow"
               className="rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-paper transition hover:bg-accent"
             >
               {t.auth.loginLink}

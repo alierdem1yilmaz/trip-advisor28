@@ -22,10 +22,10 @@ export const FAL_MODEL = process.env.FAL_MODEL?.trim() || "openai/gpt-5";
 // reasoning is worth the wait for itinerary generation, not for a chat reply.
 export const FAL_CHAT_MODEL = process.env.FAL_CHAT_MODEL?.trim() || "openai/gpt-5-mini";
 
-export async function generateJson<T>(prompt: string): Promise<T> {
+export async function generateJson<T>(prompt: string, model: string = FAL_MODEL): Promise<T> {
   const openai = getClient();
   const completion = await openai.chat.completions.create({
-    model: FAL_MODEL,
+    model,
     messages: [{ role: "user", content: prompt }],
     response_format: { type: "json_object" },
   });

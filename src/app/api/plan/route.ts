@@ -1,11 +1,20 @@
-import { NextResponse } from "next/server";
+import { corsJson, corsPreflight } from "@/lib/cors";
 import { generateJson } from "@/lib/fal";
-import { findPois, geocodeDestination, resolvePlaceName, type Poi } from "@/lib/opentripmap";
-import { resolvePlaceFoursquare } from "@/lib/foursquare";
-import { getDailyForecast, type DailyWeather } from "@/lib/weather";
+import { findPois, geocodeDestination } from "@/lib/opentripmap";
+import { getDailyForecast } from "@/lib/weather";
 import { LANGUAGE_PROMPT_NAME, resolveLanguage } from "@/lib/i18n/dictionaries";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { hasEnoughTokens, consumeTokens } from "@/lib/plan-limits";
+import { prisma } from "@/lib/db";
+import {
+  resolveStopLocation,
+  PACE_LABEL,
+  COMPANION_LABEL,
+  TRANSPORT_LABEL,
+  SEASON_LABEL,
+  weatherGuidance,
+  buildPersonalizationBlock,
+} from "@/lib/itinerary";
 import {
   addDaysIso,
   diffInDaysIso,
@@ -27,6 +36,9 @@ type ItineraryStop = {
   // the "estimatedRating" note near the prompt for why it's labeled, not
   // presented as, a real rating.
   estimatedRating?: number;
+  // Best-informed estimate of this stop's typical price level, "$" cheap/
+  // free through "$$$" expensive/upscale — judged per stop, not per city.
+  priceTier?: "$" | "$$" | "$$$";
   // Internal only, never shown to the user: the internationally-recognized
   // (English) name of this exact place. OpenTripMap only indexes names in
   // English or Russian, so a Turkish/Spanish `title` (e.g. "Ayasofya") won't
@@ -47,13 +59,19 @@ type ResponseStop = {
   description: string;
   reason: string;
   estimatedRating?: number;
+  priceTier?: "$" | "$$" | "$$$";
   lat?: number;
   lon?: number;
 };
 
 type ResponseDay = Omit<ItineraryDay, "stops"> & {
   stops: ResponseStop[];
-  weather?: { tempMaxC: number; tempMinC: number; condition: string; label: string };
+  weather?: {
+    tempMaxC: number;
+    tempMinC: number;
+    condition: string;
+    label: string;
+  };
 };
 
 type PlanResponse = {
@@ -66,113 +84,19 @@ type PlanResponse = {
   tokensRemaining?: number;
 };
 
-/** Case-insensitive, either-direction substring match against the grounded POI list. */
-function matchPoi(title: string, pois: Poi[]): Poi | undefined {
-  const needle = title.trim().toLowerCase();
-  if (!needle) return undefined;
-  return pois.find((p) => {
-    const hay = p.name.trim().toLowerCase();
-    return hay === needle || hay.includes(needle) || needle.includes(hay);
-  });
-}
-
-/**
- * The model sometimes writes a descriptive title instead of the plain
- * indexed place name — e.g. "Şehzade Camii ve Avlusu" ("...and its
- * courtyard") or "Fatih Anıtı (Fatih Sultan Mehmet)" — which breaks both
- * grounded-POI matching and the autosuggest fallback. Strip parentheticals
- * and common "X and Y" conjunctions (in the languages this app supports) to
- * get a second, cleaner candidate to try.
- */
-function cleanPlaceName(title: string): string {
-  let cleaned = title.replace(/\s*\([^)]*\)\s*/g, " ").trim();
-  for (const conjunction of [" and ", " ve ", " y "]) {
-    const idx = cleaned.toLowerCase().indexOf(conjunction);
-    if (idx > 3) {
-      cleaned = cleaned.slice(0, idx).trim();
-      break;
-    }
-  }
-  return cleaned;
-}
-
-async function resolveStopLocation(
-  title: string,
-  pois: Poi[],
-  center: { lat: number; lon: number } | null,
-): Promise<{ lat: number; lon: number } | null> {
-  const direct = matchPoi(title, pois);
-  if (direct) return { lat: direct.lat, lon: direct.lon };
-
-  const cleaned = cleanPlaceName(title);
-  if (cleaned !== title) {
-    const cleanedMatch = matchPoi(cleaned, pois);
-    if (cleanedMatch) return { lat: cleanedMatch.lat, lon: cleanedMatch.lon };
-  }
-
-  if (!center) return null;
-
-  const resolved = await resolvePlaceName(title, center);
-  if (resolved) return resolved;
-  if (cleaned !== title) {
-    const resolvedCleaned = await resolvePlaceName(cleaned, center);
-    if (resolvedCleaned) return resolvedCleaned;
-  }
-
-  // Last resort: Foursquare's free tier tends to know small commercial
-  // places (cafés, restaurants, shops) that OpenTripMap/OSM misses.
-  const viaFoursquare = await resolvePlaceFoursquare(title, center);
-  if (viaFoursquare) return viaFoursquare;
-  if (cleaned !== title) return resolvePlaceFoursquare(cleaned, center);
-  return null;
-}
-
-const PACE_LABEL: Record<string, string> = {
-  relaxed: "relaxed, with plenty of downtime and few stops per day",
-  balanced: "balanced",
-  intensive: "intensive, packing in as much as possible each day",
-};
-
-const COMPANION_LABEL: Record<string, string> = {
-  solo: "a solo traveler",
-  couple: "a couple",
-  family: "a family with kids",
-  friends: "a group of friends",
-};
-
-const TRANSPORT_LABEL: Record<string, string> = {
-  walking:
-    "on foot. Choose stops within easy walking distance of each other each day, in an order that minimizes backtracking and long walks between consecutive stops.",
-  transit:
-    "public transportation (metro, bus, tram). Prefer stops that are well-connected by transit, and sequence them to minimize transfers and travel time between stops.",
-  car: "by car. Sequence stops to minimize total drive time and avoid backtracking. Where relevant, schedule around likely rush-hour traffic (roughly 8-9:30am and 5-7pm on weekdays) — e.g. avoid a cross-town drive right at 6pm if an earlier or later slot works as well.",
-};
-
-function weatherGuidance(w: DailyWeather): string {
-  switch (w.condition) {
-    case "rain":
-    case "storm":
-      return "rain expected — favor indoor or covered stops (museums, markets, galleries) over open-air ones";
-    case "snow":
-      return "snow expected — favor cozy indoor stops, or snow-friendly outdoor spots, and allow extra time for cold-weather logistics";
-    case "clear":
-      return "clear skies — a good day for outdoor landmarks, parks, and walking routes";
-    case "fog":
-      return "fog expected — fine for indoor stops; skip viewpoints that depend on a clear view";
-    default:
-      return "mixed conditions — a flexible day works well with a blend of indoor and outdoor stops";
-  }
-}
-
 const MAX_INTERESTS = 6;
 const MAX_FIELD_LENGTH = 60;
+
+export async function OPTIONS() {
+  return corsPreflight();
+}
 
 export async function POST(request: Request) {
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+    return corsJson({ error: "Invalid JSON body." }, { status: 400 });
   }
 
   const {
@@ -180,6 +104,7 @@ export async function POST(request: Request) {
     accommodation,
     startDate,
     endDate,
+    season,
     pace,
     interests,
     companions,
@@ -190,6 +115,7 @@ export async function POST(request: Request) {
     accommodation?: unknown;
     startDate?: unknown;
     endDate?: unknown;
+    season?: unknown;
     pace?: unknown;
     interests?: unknown;
     companions?: unknown;
@@ -199,13 +125,15 @@ export async function POST(request: Request) {
   const lang = resolveLanguage(language);
 
   if (typeof destination !== "string" || !destination.trim()) {
-    return NextResponse.json({ error: "destination is required." }, { status: 400 });
+    return corsJson({ error: "destination is required." }, { status: 400 });
   }
   if (destination.length > MAX_FIELD_LENGTH) {
-    return NextResponse.json({ error: "destination is too long." }, { status: 400 });
+    return corsJson({ error: "destination is too long." }, { status: 400 });
   }
   const accommodationText =
-    typeof accommodation === "string" ? accommodation.trim().slice(0, MAX_FIELD_LENGTH) : "";
+    typeof accommodation === "string"
+      ? accommodation.trim().slice(0, MAX_FIELD_LENGTH)
+      : "";
 
   if (
     typeof startDate !== "string" ||
@@ -213,7 +141,7 @@ export async function POST(request: Request) {
     !isValidIsoDate(startDate) ||
     !isValidIsoDate(endDate)
   ) {
-    return NextResponse.json(
+    return corsJson(
       { error: "startDate and endDate are required (YYYY-MM-DD)." },
       { status: 400 },
     );
@@ -222,7 +150,7 @@ export async function POST(request: Request) {
   const today = todayIso();
   const forecastLimit = addDaysIso(today, WEATHER_FORECAST_HORIZON_DAYS);
   if (startDate < today || startDate > forecastLimit || endDate < startDate) {
-    return NextResponse.json(
+    return corsJson(
       {
         error: `Trip dates must fall within the next ${WEATHER_FORECAST_HORIZON_DAYS} days, so weather-aware planning stays reliable.`,
       },
@@ -230,10 +158,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const dayCount = Math.min(diffInDaysIso(startDate, endDate) + 1, MAX_TRIP_LENGTH_DAYS);
+  const dayCount = Math.min(
+    diffInDaysIso(startDate, endDate) + 1,
+    MAX_TRIP_LENGTH_DAYS,
+  );
   const clampedEndDate = addDaysIso(startDate, dayCount - 1);
   if (clampedEndDate > forecastLimit) {
-    return NextResponse.json(
+    return corsJson(
       {
         error: `Trip dates must fall within the next ${WEATHER_FORECAST_HORIZON_DAYS} days, so weather-aware planning stays reliable.`,
       },
@@ -243,13 +174,13 @@ export async function POST(request: Request) {
 
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json(
+    return corsJson(
       { error: "Sign in to build a trip.", code: "SIGN_IN_REQUIRED" },
       { status: 401 },
     );
   }
   if (!hasEnoughTokens(user, dayCount)) {
-    return NextResponse.json(
+    return corsJson(
       {
         error: `This ${dayCount}-day trip needs ${dayCount} trip-days, but you only have ${user.dayTokens} left this month.`,
         code: "OUT_OF_TOKENS",
@@ -260,11 +191,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const paceKey = typeof pace === "string" && pace in PACE_LABEL ? pace : "balanced";
+  const paceKey =
+    typeof pace === "string" && pace in PACE_LABEL ? pace : "balanced";
   const companionsKey =
-    typeof companions === "string" && companions in COMPANION_LABEL ? companions : "solo";
+    typeof companions === "string" && companions in COMPANION_LABEL
+      ? companions
+      : "solo";
   const transportKey =
-    typeof transport === "string" && transport in TRANSPORT_LABEL ? transport : "walking";
+    typeof transport === "string" && transport in TRANSPORT_LABEL
+      ? transport
+      : "walking";
+  const seasonKey =
+    typeof season === "string" && season in SEASON_LABEL ? season : "summer";
 
   const interestList = Array.isArray(interests)
     ? interests
@@ -278,16 +216,48 @@ export async function POST(request: Request) {
   // it instead of the city center — "staying in Ortaköy" shouldn't produce
   // a day built around Caddebostan on the other side of the city. Falls
   // back to the plain destination center if that string doesn't geocode.
-  const accommodationQuery = accommodationText ? `${accommodationText}, ${destination.trim()}` : null;
-  const [accommodationCenter, destinationCenter, forecast] = await Promise.all([
-    accommodationQuery ? geocodeDestination(accommodationQuery) : Promise.resolve(null),
-    geocodeDestination(destination.trim()),
-    getDailyForecast(destination.trim(), startDate, clampedEndDate),
-  ]);
+  const accommodationQuery = accommodationText
+    ? `${accommodationText}, ${destination.trim()}`
+    : null;
+  // Personalization is Pro-only (see buildPersonalizationBlock docs): past
+  // ratings are only fetched, and therefore only ever influence the prompt,
+  // for Pro users. Standard users' PlanRating rows still accumulate below —
+  // they just sit unused unless the user upgrades.
+  const [accommodationCenter, destinationCenter, forecast, pastRatings] =
+    await Promise.all([
+      accommodationQuery
+        ? geocodeDestination(accommodationQuery)
+        : Promise.resolve(null),
+      geocodeDestination(destination.trim()),
+      getDailyForecast(destination.trim(), startDate, clampedEndDate),
+      user.plan === "pro"
+        ? prisma.planRating.findMany({
+            where: { userId: user.id, rating: { not: null } },
+            orderBy: { createdAt: "desc" },
+            take: 8,
+          })
+        : Promise.resolve([]),
+    ]);
   const center = accommodationCenter ?? destinationCenter;
   const groundedNearAccommodation = !!accommodationCenter;
+  const personalizationBlock = buildPersonalizationBlock(
+    pastRatings.map((r) => ({
+      destination: r.destination,
+      pace: r.pace,
+      companions: r.companions,
+      transport: r.transport,
+      season: r.season,
+      rating: r.rating!,
+      comment: r.comment,
+    })),
+  );
 
-  const pois = await findPois(destination.trim(), interestList, dayCount * 10, center);
+  const pois = await findPois(
+    destination.trim(),
+    interestList,
+    dayCount * 10,
+    center,
+  );
 
   const groundingBlock =
     pois.length > 0
@@ -315,16 +285,19 @@ ${forecast
 Generate a full ${dayCount}-day trip to "${destination.trim()}" for ${COMPANION_LABEL[companionsKey]}, running from ${startDate} to ${clampedEndDate}.
 Pace preference: ${PACE_LABEL[paceKey]}.
 Getting around: ${TRANSPORT_LABEL[transportKey]}
+Season the traveler wants (a deliberate style choice — it may not match the actual forecast below, which is real; use the forecast for practical logistics like indoor/outdoor, but bias the *kind* of stops chosen toward this season): ${SEASON_LABEL[seasonKey]}.
 ${accommodationBlock}
 ${interestList.length > 0 ? `Traveler interests: ${interestList.join(", ")}.` : ""}
 ${weatherBlock}
 ${groundingBlock}
+${personalizationBlock}
 
 Respond with ONLY minified JSON matching exactly this shape, no markdown fences:
-{"days": [{"day": number, "theme": string (short theme for the day, e.g. "Old Town & River Views"), "stops": [{"time": string (e.g. "9:00 AM"), "title": string (just the plain place name, nothing else — see rule below), "description": string (max 18 words), "reason": string (max 16 words, why this stop is scheduled here/now, referencing weather or transport when it's the actual reason), "estimatedRating": number (your own best-informed estimate of this place's general quality/reputation on a 1.0-5.0 scale, one decimal place — based on general knowledge, NOT live review data you don't have), "mapQuery": string (the internationally-recognized/English name of this exact place, for map lookup only — never shown to the user, so it's fine for it to differ in language from "title")}]}]}
+{"days": [{"day": number, "theme": string (short theme for the day, e.g. "Old Town & River Views"), "stops": [{"time": string (e.g. "9:00 AM"), "title": string (just the plain place name, nothing else — see rule below), "description": string (max 18 words), "reason": string (max 16 words, why this stop is scheduled here/now, referencing weather or transport when it's the actual reason), "estimatedRating": number (your own best-informed estimate of this place's general quality/reputation on a 1.0-5.0 scale, one decimal place — based on general knowledge, NOT live review data you don't have), "priceTier": string (one of "$", "$$", "$$$" — your best-informed estimate of this specific stop's typical price level, "$" = cheap/free, "$$" = mid-range, "$$$" = expensive/upscale), "mapQuery": string (the internationally-recognized/English name of this exact place, for map lookup only — never shown to the user, so it's fine for it to differ in language from "title")}]}]}
 
 Exactly ${dayCount} day objects, days numbered 1 to ${dayCount} in order. Each day has exactly 4 stops, ordered chronologically. Vary the stops across days — no repeats. Be specific to the destination — use real or plausible place names, not generic placeholders.
 Critical rule for "title": it must be ONLY the real, plain name of the place, exactly as it would appear on a map or sign — nothing else appended. Never add descriptive suffixes ("... and its courtyard"), alternate names in parentheses, or explanatory text to the title. Any extra context like that belongs in "description" instead, not "title".
+For "priceTier", judge the specific stop, not the destination's overall cost of living — a free viewpoint is "$" even in an expensive city, a Michelin-starred restaurant is "$$$" even in a cheap one.
 Write all text values (theme, time, title, description, reason) entirely in ${LANGUAGE_PROMPT_NAME[lang]}. Keep proper place names as they really are — never translate a proper name. The exception is "mapQuery", which is always in English regardless of the response language.`;
 
   try {
@@ -345,8 +318,14 @@ Write all text values (theme, time, title, description, reason) entirely in ${LA
         const stops: ResponseStop[] = await Promise.all(
           d.stops.map(async (stop) => {
             const { mapQuery, ...rest } = stop;
-            const location = await resolveStopLocation(mapQuery || stop.title, pois, center);
-            return location ? { ...rest, lat: location.lat, lon: location.lon } : rest;
+            const location = await resolveStopLocation(
+              mapQuery || stop.title,
+              pois,
+              center,
+            );
+            return location
+              ? { ...rest, lat: location.lat, lon: location.lon }
+              : rest;
           }),
         );
         return {
@@ -354,7 +333,12 @@ Write all text values (theme, time, title, description, reason) entirely in ${LA
           stops,
           date: formatFriendlyIso(iso, lang),
           weather: w
-            ? { tempMaxC: w.tempMaxC, tempMinC: w.tempMinC, condition: w.condition, label: w.label }
+            ? {
+                tempMaxC: w.tempMaxC,
+                tempMinC: w.tempMinC,
+                condition: w.condition,
+                label: w.label,
+              }
             : undefined,
         };
       }),
@@ -373,10 +357,50 @@ Write all text values (theme, time, title, description, reason) entirely in ${LA
       groundedPlaceCount: pois.length,
       tokensRemaining,
     };
-    return NextResponse.json(response);
+
+    // Passive, unmanaged log of every trip generated — separate from the
+    // user-initiated "Save trip" bookmark (src/app/actions/savedTrips.ts,
+    // kind "saved", 7 days). Best-effort: never let a logging failure break
+    // an otherwise-successful generation.
+    try {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 1);
+      await prisma.savedTrip.create({
+        data: {
+          userId: user.id,
+          plan: response as object,
+          kind: "history",
+          expiresAt,
+        },
+      });
+    } catch (error) {
+      console.error("history logging failed:", error);
+    }
+
+    // Logged for every plan, on both plans — this is the data collection
+    // half of the rating loop (src/components/PlanRatingPrompt.tsx prompts
+    // for a rating the next day). Whether it ever gets *used* again is
+    // gated separately, by plan tier, in the personalization fetch above.
+    try {
+      await prisma.planRating.create({
+        data: {
+          userId: user.id,
+          destination: destination.trim(),
+          pace: paceKey,
+          companions: companionsKey,
+          transport: transportKey,
+          season: seasonKey,
+          interests: interestList,
+        },
+      });
+    } catch (error) {
+      console.error("plan rating logging failed:", error);
+    }
+
+    return corsJson(response);
   } catch (error) {
     if (error instanceof Error && error.message === "FAL_KEY is not set") {
-      return NextResponse.json(
+      return corsJson(
         {
           error:
             "The trip builder isn't configured yet — add FAL_KEY to .env.local and restart the dev server.",
@@ -385,7 +409,7 @@ Write all text values (theme, time, title, description, reason) entirely in ${LA
       );
     }
     console.error("plan generation failed:", error);
-    return NextResponse.json(
+    return corsJson(
       { error: "Couldn't build your trip right now. Try again in a moment." },
       { status: 502 },
     );

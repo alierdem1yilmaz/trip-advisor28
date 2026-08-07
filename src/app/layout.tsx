@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import { Auth0Provider } from "@auth0/nextjs-auth0";
 import { ChatWidget } from "@/components/ChatWidget";
+import { PlanRatingPrompt } from "@/components/PlanRatingPrompt";
 import { LanguageProvider } from "@/lib/i18n/language-context";
 import { auth0 } from "@/lib/auth0";
 import "./globals.css";
@@ -40,6 +41,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           <LanguageProvider>
             {children}
             <ChatWidget />
+            <PlanRatingPrompt />
           </LanguageProvider>
         </Auth0Provider>
       </body>

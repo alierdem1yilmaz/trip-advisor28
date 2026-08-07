@@ -44,3 +44,68 @@ model User {
   tokensResetAt DateTime
   createdAt     DateTime @default(now())
 }
+
+model Feedback {
+  id        String   @id @default(cuid())
+  // Loose reference to User.id, not a Prisma @relation — mirrors this
+  // schema's existing style of plain fields over relations. Nullable:
+  // feedback can be submitted while signed out too.
+  userId    String?
+  email     String?
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model PlanRating {
+  id          String    @id @default(cuid())
+  userId      String
+  destination String
+  // Snapshot of the preferences used to generate this plan — fed into the
+  // personalization prompt block later (see buildPersonalizationBlock in
+  // src/lib/itinerary.ts). Plain fields, not a relation, matching this
+  // schema's existing style.
+  pace        String
+  companions  String
+  transport   String
+  season      String
+  interests   String[]
+  createdAt   DateTime  @default(now())
+  // Null until the traveler responds to the "how was this plan?" prompt
+  // shown the day after generation (src/components/PlanRatingPrompt.tsx).
+  rating      Int?
+  comment     String?
+  respondedAt DateTime?
+  // Set when the traveler dismisses the prompt without rating — stops it
+  // being asked again for this plan. No expiresAt/cron here (unlike
+  // SavedTrip): ratings are kept indefinitely as personalization history.
+  dismissed   Boolean   @default(false)
+}
+
+model VendorClick {
+  id          String   @id @default(cuid())
+  // Which comparison-site link was clicked (e.g. "Booking.com", "Expedia.com") —
+  // this is the raw feed for the Phase 2 export of referrals-per-site.
+  vendor      String
+  hotelName   String
+  destination String
+  createdAt   DateTime @default(now())
+}
+
+model SavedTrip {
+  id        String   @id @default(cuid())
+  userId    String
+  // "saved" (user clicked "Save trip", 7-day lifetime, extendable) |
+  // "history" (auto-recorded on every generation the user never explicitly
+  // saved, 1-day lifetime, not extendable/deletable — a passive log, not a
+  // managed collection). Plain string, not an enum, matching this schema's
+  // existing style.
+  kind      String   @default("saved")
+  // The full PlanResponse (destination, center, days[]) from /api/plan,
+  // stored as-is — no need to normalize into separate day/stop tables for
+  // a read-mostly bookmark feature.
+  plan      Json
+  createdAt DateTime @default(now())
+  // Auto-deleted by the daily cron (src/app/api/cron/expire-saved-trips)
+  // once this passes; extending (kind="saved" only) resets it forward again.
+  expiresAt DateTime
+}

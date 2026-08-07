@@ -20,6 +20,7 @@ export interface Dictionary {
     howItWorks: string;
     reviews: string;
     getEarlyAccess: string;
+    hotelsLink: string;
   };
   hero: {
     badge: string;
@@ -67,14 +68,24 @@ export interface Dictionary {
     subtitle: string;
     emailPlaceholder: string;
     button: string;
+    submittingButton: string;
+    successMessage: string;
+    errorMessage: string;
   };
   footer: {
     tagline: (year: number) => string;
+    feedbackLink: string;
   };
   options: {
-    companions: { solo: string; couple: string; family: string; friends: string };
+    companions: {
+      solo: string;
+      couple: string;
+      family: string;
+      friends: string;
+    };
     pace: { relaxed: string; balanced: string; intensive: string };
     transport: { walking: string; transit: string; car: string };
+    season: { summer: string; autumn: string; winter: string; spring: string };
     interests: {
       Food: string;
       History: string;
@@ -97,6 +108,8 @@ export interface Dictionary {
     startLabel: string;
     endLabel: string;
     daysInDestination: (days: number, destination: string) => string;
+    seasonTitle: string;
+    seasonSubtitle: string;
     companionsTitle: string;
     companionsSubtitle: string;
     transportTitle: string;
@@ -135,6 +148,16 @@ export interface Dictionary {
     why: string;
     planAnother: string;
     aiEstimate: string;
+    priceTierLabel: string;
+    regenerate: string;
+    regenerating: string;
+    regenerateError: string;
+    regenerateLimitReached: string;
+    saveButton: string;
+    saving: string;
+    savedButton: string;
+    saveError: string;
+    backToMenu: string;
   };
   chat: {
     greeting: string;
@@ -204,6 +227,91 @@ export interface Dictionary {
     downgradeButton: string;
     viewPricing: string;
   };
+  feedback: {
+    title: string;
+    subtitle: string;
+    messageLabel: string;
+    messagePlaceholder: string;
+    emailLabel: string;
+    emailPlaceholder: string;
+    submitButton: string;
+    submittingButton: string;
+    thankYouTitle: string;
+    thankYouSubtitle: string;
+    sendAnother: string;
+    errors: { empty: string; too_long: string; server: string };
+  };
+  planRating: {
+    title: string;
+    subtitle: (destination: string) => string;
+    commentPlaceholder: string;
+    submitButton: string;
+    submittingButton: string;
+    skipButton: string;
+    thankYouMessage: string;
+    closeButton: string;
+  };
+  savedTrips: {
+    navLink: string;
+    title: string;
+    subtitle: string;
+    empty: string;
+    savedOn: (date: string) => string;
+    expiresIn: (n: number) => string;
+    expiringWarning: (n: number) => string;
+    extendButton: string;
+    extending: string;
+    deleteButton: string;
+    deleteConfirmTitle: string;
+    deleteConfirm: string;
+    cancelButton: string;
+    savedTab: string;
+    historyTab: string;
+    historySubtitle: string;
+    historyEmpty: string;
+  };
+  hotels: {
+    title: string;
+    subtitle: string;
+    destinationLabel: string;
+    destinationPlaceholder: string;
+    checkInLabel: string;
+    checkOutLabel: string;
+    adultsLabel: string;
+    searchButton: string;
+    searching: string;
+    noResults: string;
+    error: string;
+    priceUnavailable: string;
+    ratingLabel: string;
+    recommendedBadge: string;
+    reviewCount: (n: number) => string;
+    backToResults: string;
+    reviewsTitle: string;
+    noReviews: string;
+    modifySearch: string;
+    destinationNotFound: string;
+    reviewsTranslatedNote: string;
+    reviewsLoading: string;
+    translatingNote: string;
+    filterTitle: string;
+    clearFilters: string;
+    filterRatingLabel: string;
+    ratingAndUp: (n: number) => string;
+    priceFilterLabel: string;
+    sortLabel: string;
+    sortRecommended: string;
+    sortPriceAsc: string;
+    sortPriceDesc: string;
+    sortRating: string;
+    viewList: string;
+    viewMap: string;
+    facilitiesTitle: string;
+    showMoreFacilities: (n: number) => string;
+    compareTitle: string;
+    goToSite: string;
+    noVendors: string;
+  };
 }
 
 const en: Dictionary = {
@@ -213,6 +321,7 @@ const en: Dictionary = {
     howItWorks: "How it works",
     reviews: "Reviews",
     getEarlyAccess: "Get early access",
+    hotelsLink: "Hotels",
   },
   hero: {
     badge: "Now onboarding early access travelers",
@@ -240,7 +349,8 @@ const en: Dictionary = {
   tryDemo: {
     badge: "Live demo, powered by GPT via fal.ai",
     title: "See it think.",
-    subtitle: "Type a destination. Watch VoyageAI build a day and explain every decision, live.",
+    subtitle:
+      "Type a destination. Watch VoyageAI build a day and explain every decision, live.",
     whereTo: "Where to?",
     placeholder: "Kyoto, Marrakech, Reykjavík…",
     pace: "Pace",
@@ -320,7 +430,8 @@ const en: Dictionary = {
   },
   testimonials: {
     title: "What early access testers are saying",
-    subtitle: "A first look from the small group of travelers piloting VoyageAI ahead of public launch.",
+    subtitle:
+      "A first look from the small group of travelers piloting VoyageAI ahead of public launch.",
     items: [
       {
         location: "Early access tester, Rome trip",
@@ -341,17 +452,35 @@ const en: Dictionary = {
   },
   cta: {
     title: "Be first in line when VoyageAI launches",
-    subtitle: "Join the early access list and help shape the smartest travel planner on the web.",
+    subtitle:
+      "Join the early access list and help shape the smartest travel planner on the web.",
     emailPlaceholder: "you@example.com",
     button: "Join the waitlist",
+    submittingButton: "Joining…",
+    successMessage:
+      "You're on the list — we'll email you when VoyageAI launches.",
+    errorMessage: "Something went wrong. Please try again.",
   },
   footer: {
-    tagline: (year) => `© ${year} VoyageAI. Working title, product in development.`,
+    tagline: (year) =>
+      `© ${year} VoyageAI. Working title, product in development.`,
+    feedbackLink: "Feedback",
   },
   options: {
-    companions: { solo: "Solo", couple: "Couple", family: "Family", friends: "Friends" },
+    companions: {
+      solo: "Solo",
+      couple: "Couple",
+      family: "Family",
+      friends: "Friends",
+    },
     pace: { relaxed: "Relaxed", balanced: "Balanced", intensive: "Intensive" },
     transport: { walking: "Walking", transit: "Public transit", car: "Car" },
+    season: {
+      summer: "Summer",
+      autumn: "Autumn",
+      winter: "Winter",
+      spring: "Spring",
+    },
     interests: {
       Food: "Food",
       History: "History",
@@ -378,26 +507,38 @@ const en: Dictionary = {
     endLabel: "End",
     daysInDestination: (days, destination) =>
       `${days} ${days === 1 ? "day" : "days"} in ${destination || "your destination"}`,
+    seasonTitle: "What season fits the trip you want?",
+    seasonSubtitle:
+      "This shapes the kind of stops VoyageAI leans toward — think beach clubs for summer, ski slopes for winter — independent of the actual forecast.",
     companionsTitle: "Who's traveling?",
     companionsSubtitle: "VoyageAI adjusts the whole plan around who's coming.",
     transportTitle: "How will you get around?",
     transportSubtitle:
       "This changes how stops get chosen and sequenced — on foot favors stops close together, transit favors well-connected spots, driving accounts for traffic.",
     paceTitle: "What pace feels right?",
-    paceSubtitle: "Relaxed leaves room to breathe; intensive packs in as much as possible.",
+    paceSubtitle:
+      "Relaxed leaves room to breathe; intensive packs in as much as possible.",
     interestsTitle: "Anything you're into?",
     interestsSubtitle: "Optional — pick as many as you like, or skip this one.",
     back: "Back",
     next: "Next",
     buildTrip: "Build my trip",
-    stepsLeft: (n) => (n <= 0 ? "Last question" : n === 1 ? "1 question left" : `${n} questions left`),
+    stepsLeft: (n) =>
+      n <= 0
+        ? "Last question"
+        : n === 1
+          ? "1 question left"
+          : `${n} questions left`,
     checkingPlace: "Checking…",
     placeFound: (name) => `Found: ${name}`,
     placeFuzzy: (name) => `Closest match: ${name} — not an exact match`,
     placeNotFound: "Couldn't find this place. Double-check the spelling.",
     placeNotFoundOverridden: "Continuing without verifying this place.",
     continueAnyway: "Continue anyway",
-    tokensLeft: (n) => (n === 1 ? "1 free trip-day left this month" : `${n} free trip-days left this month`),
+    tokensLeft: (n) =>
+      n === 1
+        ? "1 free trip-day left this month"
+        : `${n} free trip-days left this month`,
     unlimitedTokens: "Unlimited trip-days (Pro)",
     noTokensTitle: "You're out of free trip-days",
     noTokensSubtitle: (resetDate) =>
@@ -419,6 +560,16 @@ const en: Dictionary = {
     why: "Why",
     planAnother: "Plan another trip",
     aiEstimate: "AI estimate, not a live review score",
+    priceTierLabel: "Price tier",
+    regenerate: "Refresh this stop",
+    regenerating: "Refreshing…",
+    regenerateError: "Couldn't refresh this stop. Try again.",
+    regenerateLimitReached: "No more refreshes left for this stop.",
+    saveButton: "Save trip",
+    saving: "Saving…",
+    savedButton: "Saved",
+    saveError: "Couldn't save this trip. Try again.",
+    backToMenu: "Back to menu",
   },
   chat: {
     greeting:
@@ -460,7 +611,8 @@ const en: Dictionary = {
     proName: "Pro",
     proPrice: "Free during beta",
     proTagline: "For frequent travelers who don't want to count days.",
-    betaNote: "VoyageAI is in beta — Pro is free for now, no card required. Real pricing lands later.",
+    betaNote:
+      "VoyageAI is in beta — Pro is free for now, no card required. Real pricing lands later.",
     ctaStandard: "Get started free",
     ctaPro: "Upgrade to Pro",
     currentPlanBadge: "Your current plan",
@@ -490,6 +642,108 @@ const en: Dictionary = {
     downgradeButton: "Switch back to Standard",
     viewPricing: "Compare plans",
   },
+  feedback: {
+    title: "Send us feedback",
+    subtitle: "Found a bug, or have an idea? We read every message.",
+    messageLabel: "Your message",
+    messagePlaceholder: "What's on your mind?",
+    emailLabel: "Email (optional)",
+    emailPlaceholder: "you@example.com — only if you'd like a reply",
+    submitButton: "Send feedback",
+    submittingButton: "Sending…",
+    thankYouTitle: "Thanks for the feedback!",
+    thankYouSubtitle: "We've received your message and will take a look.",
+    sendAnother: "Send another message",
+    errors: {
+      empty: "Write a message before sending.",
+      too_long: "That message is too long — please shorten it.",
+      server: "Couldn't send your feedback right now. Try again in a moment.",
+    },
+  },
+  planRating: {
+    title: "How was this trip?",
+    subtitle: (destination) =>
+      `Yesterday we planned a trip to ${destination} for you — how did we do?`,
+    commentPlaceholder: "Anything you'd tweak? (optional)",
+    submitButton: "Submit",
+    submittingButton: "Submitting…",
+    skipButton: "Maybe later",
+    thankYouMessage: "Thanks — this helps us plan better trips for you.",
+    closeButton: "Close",
+  },
+  savedTrips: {
+    navLink: "Saved trips",
+    title: "Your saved trips",
+    subtitle:
+      "Bookmarked itineraries — kept for 7 days unless you extend them.",
+    empty: "No saved trips yet. Build a trip and save it to see it here.",
+    savedOn: (date) => `Saved on ${date}`,
+    expiresIn: (n) => (n === 1 ? "Expires in 1 day" : `Expires in ${n} days`),
+    expiringWarning: (n) =>
+      n <= 0
+        ? "Expires today — extend it to keep it longer."
+        : n === 1
+          ? "Expires in 1 day — extend it to keep it longer."
+          : `Expires in ${n} days — extend it to keep it longer.`,
+    extendButton: "Extend 1 week",
+    extending: "Extending…",
+    deleteButton: "Delete",
+    deleteConfirmTitle: "Delete saved trip?",
+    deleteConfirm: "Delete this saved trip? This can't be undone.",
+    cancelButton: "Cancel",
+    savedTab: "Saved",
+    historyTab: "History",
+    historySubtitle:
+      "Every trip you've generated, kept for one day whether you save it or not.",
+    historyEmpty:
+      "Nothing generated yet — build a trip and it'll show up here.",
+  },
+  hotels: {
+    title: "Compare hotel prices",
+    subtitle:
+      "Real hotels near your destination — priced across many booking sites at once.",
+    destinationLabel: "Destination",
+    destinationPlaceholder: "Lisbon, Bangkok, Vienna…",
+    checkInLabel: "Check-in",
+    checkOutLabel: "Check-out",
+    adultsLabel: "Guests",
+    searchButton: "Compare prices",
+    searching: "Searching…",
+    noResults:
+      "No hotels found for these dates. Try a different destination or dates.",
+    error: "Couldn't compare prices right now. Try again in a moment.",
+    priceUnavailable: "Price unavailable",
+    ratingLabel: "Rating",
+    recommendedBadge: "Recommended",
+    reviewCount: (n) =>
+      n === 1 ? "1 review" : `${n.toLocaleString("en-US")} reviews`,
+    backToResults: "Back to results",
+    reviewsTitle: "Guest reviews",
+    noReviews: "No reviews yet for this hotel.",
+    modifySearch: "Modify search",
+    destinationNotFound:
+      "Couldn't find that destination. Try a different search.",
+    reviewsTranslatedNote: "Reviews translated to match your language.",
+    reviewsLoading: "Loading reviews…",
+    translatingNote: "Translating reviews…",
+    filterTitle: "Filters",
+    clearFilters: "Clear filters",
+    filterRatingLabel: "Guest rating",
+    ratingAndUp: (n) => `${n} & up`,
+    priceFilterLabel: "Price",
+    sortLabel: "Sort by",
+    sortRecommended: "Recommended",
+    sortPriceAsc: "Price: low to high",
+    sortPriceDesc: "Price: high to low",
+    sortRating: "Top rated",
+    viewList: "List",
+    viewMap: "Map",
+    facilitiesTitle: "Facilities",
+    showMoreFacilities: (n) => `+${n} more`,
+    compareTitle: "Compare prices",
+    goToSite: "Go to site",
+    noVendors: "No pricing found across our partner sites for these dates.",
+  },
 };
 
 const tr: Dictionary = {
@@ -499,6 +753,7 @@ const tr: Dictionary = {
     howItWorks: "Nasıl çalışır",
     reviews: "Yorumlar",
     getEarlyAccess: "Erken erişim al",
+    hotelsLink: "Oteller",
   },
   hero: {
     badge: "Şu anda erken erişim gezginleri kabul ediyoruz",
@@ -521,12 +776,16 @@ const tr: Dictionary = {
     { value: "190+", label: "haritalanan ülke ve bölge" },
     { value: "10M+", label: "kataloglanmış mekan, lezzet ve saklı hazine" },
     { value: "%38", label: "elle hazırlanan plana göre daha az geri dönüş" },
-    { value: "4,9/5", label: "erken erişim test kullanıcılarının ortalama puanı" },
+    {
+      value: "4,9/5",
+      label: "erken erişim test kullanıcılarının ortalama puanı",
+    },
   ],
   tryDemo: {
     badge: "Canlı demo, fal.ai üzerinden GPT ile çalışıyor",
     title: "Düşünürken izleyin.",
-    subtitle: "Bir şehir yazın. VoyageAI'nin bir günü nasıl kurguladığını ve her kararı nasıl açıkladığını canlı izleyin.",
+    subtitle:
+      "Bir şehir yazın. VoyageAI'nin bir günü nasıl kurguladığını ve her kararı nasıl açıkladığını canlı izleyin.",
     whereTo: "Nereye?",
     placeholder: "Kyoto, Marakeş, Reykjavík…",
     pace: "Tempo",
@@ -534,7 +793,8 @@ const tr: Dictionary = {
     optional: "(opsiyonel)",
     generateButton: "Günümü oluştur",
     loadingButton: "Gününüz planlanıyor…",
-    groundedIn: (n) => `OpenTripMap üzerinden ${n} gerçek yakın mekana dayandırıldı`,
+    groundedIn: (n) =>
+      `OpenTripMap üzerinden ${n} gerçek yakın mekana dayandırıldı`,
     why: "Neden",
   },
   features: {
@@ -606,7 +866,8 @@ const tr: Dictionary = {
   },
   testimonials: {
     title: "Erken erişim test kullanıcıları neler diyor",
-    subtitle: "Genel lansmandan önce VoyageAI'yi deneyen küçük gezgin grubundan ilk izlenimler.",
+    subtitle:
+      "Genel lansmandan önce VoyageAI'yi deneyen küçük gezgin grubundan ilk izlenimler.",
     items: [
       {
         location: "Erken erişim test kullanıcısı, Roma gezisi",
@@ -627,17 +888,35 @@ const tr: Dictionary = {
   },
   cta: {
     title: "VoyageAI yayınlandığında ilk sırada olun",
-    subtitle: "Erken erişim listesine katılın ve web'in en akıllı gezi planlayıcısını şekillendirmeye yardım edin.",
+    subtitle:
+      "Erken erişim listesine katılın ve web'in en akıllı gezi planlayıcısını şekillendirmeye yardım edin.",
     emailPlaceholder: "siz@ornek.com",
     button: "Bekleme listesine katıl",
+    submittingButton: "Katılıyor…",
+    successMessage:
+      "Listeye eklendiniz — VoyageAI yayınlandığında size e-posta göndereceğiz.",
+    errorMessage: "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
   },
   footer: {
-    tagline: (year) => `© ${year} VoyageAI. Çalışma adı, ürün geliştirme aşamasında.`,
+    tagline: (year) =>
+      `© ${year} VoyageAI. Çalışma adı, ürün geliştirme aşamasında.`,
+    feedbackLink: "Geri bildirim",
   },
   options: {
-    companions: { solo: "Tek başına", couple: "Çift", family: "Aile", friends: "Arkadaşlar" },
+    companions: {
+      solo: "Tek başına",
+      couple: "Çift",
+      family: "Aile",
+      friends: "Arkadaşlar",
+    },
     pace: { relaxed: "Rahat", balanced: "Dengeli", intensive: "Yoğun" },
     transport: { walking: "Yürüyerek", transit: "Toplu taşıma", car: "Araba" },
+    season: {
+      summer: "Yaz",
+      autumn: "Sonbahar",
+      winter: "Kış",
+      spring: "İlkbahar",
+    },
     interests: {
       Food: "Yemek",
       History: "Tarih",
@@ -664,33 +943,43 @@ const tr: Dictionary = {
     endLabel: "Bitiş",
     daysInDestination: (days, destination) =>
       `${destination || "hedefinizde"} ${days} gün`,
+    seasonTitle: "İstediğiniz gezi hangi mevsime uygun?",
+    seasonSubtitle:
+      "Bu, VoyageAI'nin seçtiği durakların türünü şekillendirir — yaz için plaj barları, kış için kayak pisti gibi — gerçek hava durumu tahmininden bağımsız olarak.",
     companionsTitle: "Kimlerle seyahat ediyorsunuz?",
     companionsSubtitle: "VoyageAI tüm planı kimlerin geldiğine göre ayarlar.",
     transportTitle: "Nasıl ulaşım sağlayacaksınız?",
     transportSubtitle:
       "Bu, durakların nasıl seçilip sıralandığını değiştirir — yürüyüş birbirine yakın durakları, toplu taşıma iyi bağlantılı yerleri, araba ise trafiği hesaba katar.",
     paceTitle: "Hangi tempo size uygun?",
-    paceSubtitle: "Rahat tempo nefes almaya alan bırakır; yoğun tempo mümkün olduğunca çok şey sığdırır.",
+    paceSubtitle:
+      "Rahat tempo nefes almaya alan bırakır; yoğun tempo mümkün olduğunca çok şey sığdırır.",
     interestsTitle: "İlginizi çeken bir şey var mı?",
-    interestsSubtitle: "Opsiyonel — istediğiniz kadar seçin ya da bu adımı atlayın.",
+    interestsSubtitle:
+      "Opsiyonel — istediğiniz kadar seçin ya da bu adımı atlayın.",
     back: "Geri",
     next: "İleri",
     buildTrip: "Gezimi oluştur",
-    stepsLeft: (n) => (n <= 0 ? "Son soru" : n === 1 ? "1 soru kaldı" : `${n} soru kaldı`),
+    stepsLeft: (n) =>
+      n <= 0 ? "Son soru" : n === 1 ? "1 soru kaldı" : `${n} soru kaldı`,
     checkingPlace: "Kontrol ediliyor…",
     placeFound: (name) => `Bulundu: ${name}`,
     placeFuzzy: (name) => `En yakın eşleşme: ${name} — tam olarak eşleşmiyor`,
     placeNotFound: "Bu yer bulunamadı. Yazımı kontrol edin.",
     placeNotFoundOverridden: "Bu yer doğrulanmadan devam ediliyor.",
     continueAnyway: "Yine de devam et",
-    tokensLeft: (n) => (n === 1 ? "Bu ay 1 ücretsiz gezi günü kaldı" : `Bu ay ${n} ücretsiz gezi günü kaldı`),
+    tokensLeft: (n) =>
+      n === 1
+        ? "Bu ay 1 ücretsiz gezi günü kaldı"
+        : `Bu ay ${n} ücretsiz gezi günü kaldı`,
     unlimitedTokens: "Sınırsız gezi günü (Pro)",
     noTokensTitle: "Ücretsiz gezi gününüz kalmadı",
     noTokensSubtitle: (resetDate) =>
       `Ücretsiz günleriniz ${resetDate} tarihinde yenilenecek, ya da hemen Pro'ya geçerek sınırsız planlama yapabilirsiniz.`,
     upgradeCta: "Pro'ya geç",
     signInTitle: "Gezi oluşturmak için giriş yapın",
-    signInSubtitle: "Ücretsiz hesaplar ayda 3 gezi günü kazanır — kredi kartı gerekmez.",
+    signInSubtitle:
+      "Ücretsiz hesaplar ayda 3 gezi günü kazanır — kredi kartı gerekmez.",
     signInCta: "Giriş yap veya hesap oluştur",
   },
   loading: {
@@ -700,11 +989,22 @@ const tr: Dictionary = {
   },
   results: {
     dayTrip: (n) => `${n} günlük gezi`,
-    groundedIn: (n) => `OpenTripMap üzerinden ${n} gerçek yakın mekana dayandırıldı`,
+    groundedIn: (n) =>
+      `OpenTripMap üzerinden ${n} gerçek yakın mekana dayandırıldı`,
     day: (n) => `${n}. Gün`,
     why: "Neden",
     planAnother: "Başka bir gezi planla",
     aiEstimate: "Yapay zeka tahmini, gerçek yorum puanı değil",
+    priceTierLabel: "Fiyat aralığı",
+    regenerate: "Bu durağı yenile",
+    regenerating: "Yenileniyor…",
+    regenerateError: "Bu durak yenilenemedi. Tekrar deneyin.",
+    regenerateLimitReached: "Bu durak için yenileme hakkı kalmadı.",
+    saveButton: "Trip'i kaydet",
+    saving: "Kaydediliyor…",
+    savedButton: "Kaydedildi",
+    saveError: "Bu trip kaydedilemedi. Tekrar deneyin.",
+    backToMenu: "Menüye dön",
   },
   chat: {
     greeting:
@@ -738,14 +1038,16 @@ const tr: Dictionary = {
   pricing: {
     navLabel: "Fiyatlandırma",
     title: "Basit, kullanıma dayalı fiyatlandırma",
-    subtitle: "Ücretsiz başlayın. Ayda birkaç gezi gününden fazlasını planlıyorsanız yükseltin.",
+    subtitle:
+      "Ücretsiz başlayın. Ayda birkaç gezi gününden fazlasını planlıyorsanız yükseltin.",
     standardName: "Standart",
     standardPrice: "Ücretsiz",
     standardTagline: "Ara sıra seyahat edenler için.",
     proName: "Pro",
     proPrice: "Beta sürecinde ücretsiz",
     proTagline: "Günleri saymak istemeyen sık gezginler için.",
-    betaNote: "VoyageAI beta aşamasında — Pro şu anlık ücretsiz, kredi kartı gerekmez. Gerçek fiyatlandırma daha sonra gelecek.",
+    betaNote:
+      "VoyageAI beta aşamasında — Pro şu anlık ücretsiz, kredi kartı gerekmez. Gerçek fiyatlandırma daha sonra gelecek.",
     ctaStandard: "Ücretsiz başla",
     ctaPro: "Pro'ya geç",
     currentPlanBadge: "Mevcut planınız",
@@ -775,6 +1077,114 @@ const tr: Dictionary = {
     downgradeButton: "Standart'a geri dön",
     viewPricing: "Planları karşılaştır",
   },
+  feedback: {
+    title: "Bize geri bildirim gönderin",
+    subtitle:
+      "Bir hata mı buldunuz, ya da bir fikriniz mi var? Her mesajı okuyoruz.",
+    messageLabel: "Mesajınız",
+    messagePlaceholder: "Aklınızdan ne geçiyor?",
+    emailLabel: "E-posta (opsiyonel)",
+    emailPlaceholder: "siz@ornek.com — yalnızca yanıt isterseniz",
+    submitButton: "Gönder",
+    submittingButton: "Gönderiliyor…",
+    thankYouTitle: "Geri bildiriminiz için teşekkürler!",
+    thankYouSubtitle: "Mesajınızı aldık, inceleyeceğiz.",
+    sendAnother: "Başka bir mesaj gönder",
+    errors: {
+      empty: "Göndermeden önce bir mesaj yazın.",
+      too_long: "Bu mesaj çok uzun — lütfen kısaltın.",
+      server:
+        "Geri bildiriminiz şu anda gönderilemedi. Birazdan tekrar deneyin.",
+    },
+  },
+  planRating: {
+    title: "Bu trip nasıldı?",
+    subtitle: (destination) =>
+      `Dün senin için ${destination} için bir plan hazırladık — nasıl buldun?`,
+    commentPlaceholder: "Değiştirmek isteyeceğin bir şey var mı? (opsiyonel)",
+    submitButton: "Gönder",
+    submittingButton: "Gönderiliyor…",
+    skipButton: "Belki sonra",
+    thankYouMessage:
+      "Teşekkürler — bu, senin için daha iyi planlar hazırlamamıza yardımcı olacak.",
+    closeButton: "Kapat",
+  },
+  savedTrips: {
+    navLink: "Kaydedilen Trip'lerim",
+    title: "Kaydedilen trip'lerin",
+    subtitle:
+      "İşaretlenen rota planları — sen uzatmadıkça 7 gün sonra silinir.",
+    empty:
+      "Henüz kaydedilmiş bir trip yok. Bir trip oluşturup kaydet, burada görünsün.",
+    savedOn: (date) => `${date} tarihinde kaydedildi`,
+    expiresIn: (n) =>
+      n === 1 ? "1 gün sonra silinecek" : `${n} gün sonra silinecek`,
+    expiringWarning: (n) =>
+      n <= 0
+        ? "Bugün silinecek — daha uzun tutmak için uzat."
+        : n === 1
+          ? "1 gün sonra silinecek — daha uzun tutmak için uzat."
+          : `${n} gün sonra silinecek — daha uzun tutmak için uzat.`,
+    extendButton: "1 hafta uzat",
+    extending: "Uzatılıyor…",
+    deleteButton: "Sil",
+    deleteConfirmTitle: "Kaydedilen trip silinsin mi?",
+    deleteConfirm: "Bu kaydedilen trip silinsin mi? Bu işlem geri alınamaz.",
+    cancelButton: "Vazgeç",
+    savedTab: "Kaydedilenler",
+    historyTab: "Geçmiş",
+    historySubtitle:
+      "Oluşturduğun her trip — kaydetsen de kaydetmesen de bir gün boyunca burada.",
+    historyEmpty:
+      "Henüz bir şey oluşturulmadı — bir trip oluştur, burada görünsün.",
+  },
+  hotels: {
+    title: "Otel fiyatlarını karşılaştır",
+    subtitle:
+      "Hedefine yakın gerçek oteller — birçok rezervasyon sitesinde aynı anda fiyatlandırılmış.",
+    destinationLabel: "Hedef",
+    destinationPlaceholder: "Lizbon, Bangkok, Viyana…",
+    checkInLabel: "Giriş",
+    checkOutLabel: "Çıkış",
+    adultsLabel: "Misafir sayısı",
+    searchButton: "Fiyatları karşılaştır",
+    searching: "Aranıyor…",
+    noResults:
+      "Bu tarihler için otel bulunamadı. Farklı bir hedef veya tarih dene.",
+    error: "Fiyat karşılaştırması şu anda yapılamadı. Birazdan tekrar deneyin.",
+    priceUnavailable: "Fiyat bilgisi yok",
+    ratingLabel: "Puan",
+    recommendedBadge: "Önerilen",
+    reviewCount: (n) =>
+      n === 1
+        ? "1 değerlendirme"
+        : `${n.toLocaleString("tr-TR")} değerlendirme`,
+    backToResults: "Sonuçlara dön",
+    reviewsTitle: "Misafir yorumları",
+    noReviews: "Bu otel için henüz yorum yok.",
+    modifySearch: "Aramayı değiştir",
+    destinationNotFound: "Bu hedef bulunamadı. Farklı bir arama dene.",
+    reviewsTranslatedNote: "Yorumlar diline uyacak şekilde çevrildi.",
+    reviewsLoading: "Yorumlar yükleniyor…",
+    translatingNote: "Yorumlar çevriliyor…",
+    filterTitle: "Filtreler",
+    clearFilters: "Filtreleri temizle",
+    filterRatingLabel: "Müşteri Puanı",
+    ratingAndUp: (n) => `${n} ve üzeri`,
+    priceFilterLabel: "Fiyat",
+    sortLabel: "Sırala",
+    sortRecommended: "Önerilen",
+    sortPriceAsc: "Fiyat: düşükten yükseğe",
+    sortPriceDesc: "Fiyat: yüksekten düşüğe",
+    sortRating: "En yüksek puan",
+    viewList: "Liste",
+    viewMap: "Harita",
+    facilitiesTitle: "Olanaklar",
+    showMoreFacilities: (n) => `+${n} tane daha`,
+    compareTitle: "Fiyatları karşılaştır",
+    goToSite: "Siteye git",
+    noVendors: "Bu tarihler için ortak sitelerimizde fiyat bulunamadı.",
+  },
 };
 
 const es: Dictionary = {
@@ -784,6 +1194,7 @@ const es: Dictionary = {
     howItWorks: "Cómo funciona",
     reviews: "Opiniones",
     getEarlyAccess: "Acceso anticipado",
+    hotelsLink: "Hoteles",
   },
   hero: {
     badge: "Ahora aceptando viajeros de acceso anticipado",
@@ -804,14 +1215,21 @@ const es: Dictionary = {
   },
   stats: [
     { value: "190+", label: "países y territorios mapeados" },
-    { value: "10M+", label: "atracciones, restaurantes y joyas ocultas indexados" },
+    {
+      value: "10M+",
+      label: "atracciones, restaurantes y joyas ocultas indexados",
+    },
     { value: "38%", label: "menos idas y vueltas que un plan hecho a mano" },
-    { value: "4.9/5", label: "valoración media de los probadores de acceso anticipado" },
+    {
+      value: "4.9/5",
+      label: "valoración media de los probadores de acceso anticipado",
+    },
   ],
   tryDemo: {
     badge: "Demo en vivo, con GPT a través de fal.ai",
     title: "Míralo pensar.",
-    subtitle: "Escribe un destino. Mira a VoyageAI construir un día y explicar cada decisión, en vivo.",
+    subtitle:
+      "Escribe un destino. Mira a VoyageAI construir un día y explicar cada decisión, en vivo.",
     whereTo: "¿A dónde?",
     placeholder: "Kioto, Marrakech, Reikiavik…",
     pace: "Ritmo",
@@ -891,7 +1309,8 @@ const es: Dictionary = {
   },
   testimonials: {
     title: "Lo que dicen los probadores de acceso anticipado",
-    subtitle: "Una primera mirada del pequeño grupo de viajeros probando VoyageAI antes del lanzamiento público.",
+    subtitle:
+      "Una primera mirada del pequeño grupo de viajeros probando VoyageAI antes del lanzamiento público.",
     items: [
       {
         location: "Probador de acceso anticipado, viaje a Roma",
@@ -912,17 +1331,43 @@ const es: Dictionary = {
   },
   cta: {
     title: "Sé de los primeros cuando VoyageAI se lance",
-    subtitle: "Únete a la lista de acceso anticipado y ayuda a dar forma al planificador de viajes más inteligente de la web.",
+    subtitle:
+      "Únete a la lista de acceso anticipado y ayuda a dar forma al planificador de viajes más inteligente de la web.",
     emailPlaceholder: "tu@ejemplo.com",
     button: "Unirme a la lista de espera",
+    submittingButton: "Uniéndote…",
+    successMessage:
+      "Ya estás en la lista — te avisaremos por correo cuando VoyageAI se lance.",
+    errorMessage: "Algo salió mal. Inténtalo de nuevo.",
   },
   footer: {
-    tagline: (year) => `© ${year} VoyageAI. Nombre provisional, producto en desarrollo.`,
+    tagline: (year) =>
+      `© ${year} VoyageAI. Nombre provisional, producto en desarrollo.`,
+    feedbackLink: "Comentarios",
   },
   options: {
-    companions: { solo: "Solo/a", couple: "Pareja", family: "Familia", friends: "Amigos" },
-    pace: { relaxed: "Relajado", balanced: "Equilibrado", intensive: "Intenso" },
-    transport: { walking: "A pie", transit: "Transporte público", car: "Coche" },
+    companions: {
+      solo: "Solo/a",
+      couple: "Pareja",
+      family: "Familia",
+      friends: "Amigos",
+    },
+    pace: {
+      relaxed: "Relajado",
+      balanced: "Equilibrado",
+      intensive: "Intenso",
+    },
+    transport: {
+      walking: "A pie",
+      transit: "Transporte público",
+      car: "Coche",
+    },
+    season: {
+      summer: "Verano",
+      autumn: "Otoño",
+      winter: "Invierno",
+      spring: "Primavera",
+    },
     interests: {
       Food: "Gastronomía",
       History: "Historia",
@@ -949,33 +1394,47 @@ const es: Dictionary = {
     endLabel: "Fin",
     daysInDestination: (days, destination) =>
       `${days} ${days === 1 ? "día" : "días"} en ${destination || "tu destino"}`,
+    seasonTitle: "¿Qué estación encaja con el viaje que quieres?",
+    seasonSubtitle:
+      "Esto orienta el tipo de paradas que elige VoyageAI — piensa en clubes de playa para verano, pistas de esquí para invierno — independientemente del pronóstico real.",
     companionsTitle: "¿Quién viaja?",
     companionsSubtitle: "VoyageAI ajusta todo el plan según quién venga.",
     transportTitle: "¿Cómo te moverás?",
     transportSubtitle:
       "Esto cambia cómo se eligen y organizan las paradas — a pie favorece paradas cercanas entre sí, el transporte público favorece lugares bien conectados, conducir tiene en cuenta el tráfico.",
     paceTitle: "¿Qué ritmo te va mejor?",
-    paceSubtitle: "Relajado deja espacio para respirar; intenso aprovecha al máximo cada día.",
+    paceSubtitle:
+      "Relajado deja espacio para respirar; intenso aprovecha al máximo cada día.",
     interestsTitle: "¿Algo que te interese?",
-    interestsSubtitle: "Opcional — elige tantos como quieras, o salta este paso.",
+    interestsSubtitle:
+      "Opcional — elige tantos como quieras, o salta este paso.",
     back: "Atrás",
     next: "Siguiente",
     buildTrip: "Crear mi viaje",
-    stepsLeft: (n) => (n <= 0 ? "Última pregunta" : n === 1 ? "1 pregunta restante" : `${n} preguntas restantes`),
+    stepsLeft: (n) =>
+      n <= 0
+        ? "Última pregunta"
+        : n === 1
+          ? "1 pregunta restante"
+          : `${n} preguntas restantes`,
     checkingPlace: "Comprobando…",
     placeFound: (name) => `Encontrado: ${name}`,
     placeFuzzy: (name) => `Coincidencia más cercana: ${name} — no exacta`,
     placeNotFound: "No se encontró este lugar. Revisa la ortografía.",
     placeNotFoundOverridden: "Continuando sin verificar este lugar.",
     continueAnyway: "Continuar de todos modos",
-    tokensLeft: (n) => (n === 1 ? "Queda 1 día de viaje gratis este mes" : `Quedan ${n} días de viaje gratis este mes`),
+    tokensLeft: (n) =>
+      n === 1
+        ? "Queda 1 día de viaje gratis este mes"
+        : `Quedan ${n} días de viaje gratis este mes`,
     unlimitedTokens: "Días de viaje ilimitados (Pro)",
     noTokensTitle: "Se acabaron tus días de viaje gratis",
     noTokensSubtitle: (resetDate) =>
       `Tus días gratis se renuevan el ${resetDate}, o mejora a Pro ahora mismo para planificar sin límites.`,
     upgradeCta: "Mejorar a Pro",
     signInTitle: "Inicia sesión para crear un viaje",
-    signInSubtitle: "Las cuentas gratuitas obtienen 3 días de viaje al mes — sin tarjeta.",
+    signInSubtitle:
+      "Las cuentas gratuitas obtienen 3 días de viaje al mes — sin tarjeta.",
     signInCta: "Inicia sesión o crea una cuenta",
   },
   loading: {
@@ -990,6 +1449,16 @@ const es: Dictionary = {
     why: "Por qué",
     planAnother: "Planear otro viaje",
     aiEstimate: "Estimación de la IA, no una puntuación real",
+    priceTierLabel: "Rango de precio",
+    regenerate: "Actualizar esta parada",
+    regenerating: "Actualizando…",
+    regenerateError: "No se pudo actualizar esta parada. Inténtalo de nuevo.",
+    regenerateLimitReached: "No quedan más actualizaciones para esta parada.",
+    saveButton: "Guardar viaje",
+    saving: "Guardando…",
+    savedButton: "Guardado",
+    saveError: "No se pudo guardar este viaje. Inténtalo de nuevo.",
+    backToMenu: "Volver al menú",
   },
   chat: {
     greeting:
@@ -1023,14 +1492,16 @@ const es: Dictionary = {
   pricing: {
     navLabel: "Precios",
     title: "Precios simples, según el uso",
-    subtitle: "Empieza gratis. Mejora solo si planeas más de unos pocos días de viaje al mes.",
+    subtitle:
+      "Empieza gratis. Mejora solo si planeas más de unos pocos días de viaje al mes.",
     standardName: "Estándar",
     standardPrice: "Gratis",
     standardTagline: "Para viajes ocasionales.",
     proName: "Pro",
     proPrice: "Gratis durante la beta",
     proTagline: "Para viajeros frecuentes que no quieren contar días.",
-    betaNote: "VoyageAI está en beta — Pro es gratis por ahora, sin tarjeta. El precio real llegará más adelante.",
+    betaNote:
+      "VoyageAI está en beta — Pro es gratis por ahora, sin tarjeta. El precio real llegará más adelante.",
     ctaStandard: "Empieza gratis",
     ctaPro: "Mejorar a Pro",
     currentPlanBadge: "Tu plan actual",
@@ -1053,12 +1524,120 @@ const es: Dictionary = {
     planLabel: "Plan",
     standardPlan: "Estándar",
     proPlan: "Pro",
-    tokensLeft: (n) => (n === 1 ? "Queda 1 día de viaje" : `Quedan ${n} días de viaje`),
+    tokensLeft: (n) =>
+      n === 1 ? "Queda 1 día de viaje" : `Quedan ${n} días de viaje`,
     unlimitedTokens: "Días de viaje ilimitados",
     resetsOn: (date) => `Se renueva el ${date}`,
     upgradeButton: "Mejorar a Pro",
     downgradeButton: "Volver a Estándar",
     viewPricing: "Comparar planes",
+  },
+  feedback: {
+    title: "Envíanos tu opinión",
+    subtitle:
+      "¿Encontraste un error, o tienes una idea? Leemos todos los mensajes.",
+    messageLabel: "Tu mensaje",
+    messagePlaceholder: "¿Qué tienes en mente?",
+    emailLabel: "Correo (opcional)",
+    emailPlaceholder: "tu@ejemplo.com — solo si quieres una respuesta",
+    submitButton: "Enviar",
+    submittingButton: "Enviando…",
+    thankYouTitle: "¡Gracias por tu opinión!",
+    thankYouSubtitle: "Recibimos tu mensaje y lo revisaremos.",
+    sendAnother: "Enviar otro mensaje",
+    errors: {
+      empty: "Escribe un mensaje antes de enviar.",
+      too_long: "Ese mensaje es demasiado largo — acórtalo, por favor.",
+      server:
+        "No se pudo enviar tu opinión ahora. Inténtalo de nuevo en un momento.",
+    },
+  },
+  planRating: {
+    title: "¿Qué tal este viaje?",
+    subtitle: (destination) =>
+      `Ayer planeamos un viaje a ${destination} para ti — ¿qué tal lo hicimos?`,
+    commentPlaceholder: "¿Algo que cambiarías? (opcional)",
+    submitButton: "Enviar",
+    submittingButton: "Enviando…",
+    skipButton: "Quizás luego",
+    thankYouMessage:
+      "Gracias — esto nos ayuda a planear mejores viajes para ti.",
+    closeButton: "Cerrar",
+  },
+  savedTrips: {
+    navLink: "Viajes guardados",
+    title: "Tus viajes guardados",
+    subtitle:
+      "Itinerarios marcados — se conservan 7 días a menos que los extiendas.",
+    empty:
+      "Aún no hay viajes guardados. Crea un viaje y guárdalo para verlo aquí.",
+    savedOn: (date) => `Guardado el ${date}`,
+    expiresIn: (n) => (n === 1 ? "Vence en 1 día" : `Vence en ${n} días`),
+    expiringWarning: (n) =>
+      n <= 0
+        ? "Vence hoy — extiéndelo para conservarlo más tiempo."
+        : n === 1
+          ? "Vence en 1 día — extiéndelo para conservarlo más tiempo."
+          : `Vence en ${n} días — extiéndelo para conservarlo más tiempo.`,
+    extendButton: "Extender 1 semana",
+    extending: "Extendiendo…",
+    deleteButton: "Eliminar",
+    deleteConfirmTitle: "¿Eliminar viaje guardado?",
+    deleteConfirm: "¿Eliminar este viaje guardado? Esto no se puede deshacer.",
+    cancelButton: "Cancelar",
+    savedTab: "Guardados",
+    historyTab: "Historial",
+    historySubtitle:
+      "Cada viaje que has generado, guardado un día lo guardes o no.",
+    historyEmpty:
+      "Aún no se ha generado nada — crea un viaje y aparecerá aquí.",
+  },
+  hotels: {
+    title: "Compara precios de hoteles",
+    subtitle:
+      "Hoteles reales cerca de tu destino — con precios de muchos sitios de reserva a la vez.",
+    destinationLabel: "Destino",
+    destinationPlaceholder: "Lisboa, Bangkok, Viena…",
+    checkInLabel: "Entrada",
+    checkOutLabel: "Salida",
+    adultsLabel: "Huéspedes",
+    searchButton: "Comparar precios",
+    searching: "Buscando…",
+    noResults:
+      "No se encontraron hoteles para estas fechas. Prueba otro destino o fechas.",
+    error:
+      "No se pudo comparar precios ahora. Inténtalo de nuevo en un momento.",
+    priceUnavailable: "Precio no disponible",
+    ratingLabel: "Puntuación",
+    recommendedBadge: "Recomendado",
+    reviewCount: (n) =>
+      n === 1 ? "1 reseña" : `${n.toLocaleString("es-ES")} reseñas`,
+    backToResults: "Volver a los resultados",
+    reviewsTitle: "Opiniones de huéspedes",
+    noReviews: "Aún no hay opiniones para este hotel.",
+    modifySearch: "Modificar búsqueda",
+    destinationNotFound: "No se encontró ese destino. Prueba otra búsqueda.",
+    reviewsTranslatedNote: "Reseñas traducidas a tu idioma.",
+    reviewsLoading: "Cargando reseñas…",
+    translatingNote: "Traduciendo reseñas…",
+    filterTitle: "Filtros",
+    clearFilters: "Borrar filtros",
+    filterRatingLabel: "Valoración de huéspedes",
+    ratingAndUp: (n) => `${n} o más`,
+    priceFilterLabel: "Precio",
+    sortLabel: "Ordenar por",
+    sortRecommended: "Recomendado",
+    sortPriceAsc: "Precio: menor a mayor",
+    sortPriceDesc: "Precio: mayor a menor",
+    sortRating: "Mejor valorados",
+    viewList: "Lista",
+    viewMap: "Mapa",
+    facilitiesTitle: "Instalaciones",
+    showMoreFacilities: (n) => `+${n} más`,
+    compareTitle: "Comparar precios",
+    goToSite: "Ir al sitio",
+    noVendors:
+      "No se encontraron precios en nuestros sitios asociados para estas fechas.",
   },
 };
 

@@ -32,9 +32,13 @@ export function AccountContent({
     <div className="min-h-screen bg-paper">
       <SimpleHeader>
         {/* Auth0's own route — must stay a plain <a> so this is a full
-            navigation, not client-side routing (see the SDK's docs). */}
+            navigation, not client-side routing (see the SDK's docs).
+            rel="nofollow" keeps Chrome's link preloading from firing this
+            GET on hover, which was creating a stray transaction cookie and
+            triggering "state parameter is invalid" on the real click. */}
         <a
           href="/auth/logout"
+          rel="nofollow"
           className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft transition hover:text-ink"
         >
           <LogOut className="h-3.5 w-3.5" />

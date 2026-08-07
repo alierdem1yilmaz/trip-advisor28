@@ -47,3 +47,8 @@ next-env.d.ts
 /.claude/skills/
 /.windsurf/
 /skills-lock.json
+
+# Separate Expo/React Native mobile app project living alongside this repo —
+# its own tooling/deps, not part of the Next.js web app (see tsconfig.json/
+# eslint.config.mjs excludes).
+/mobile/

@@ -1,43 +1,44 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
   ArrowRight,
+  Bookmark,
+  BookmarkCheck,
   Bus,
   CalendarDays,
   Car,
   Check,
-  CircleCheck,
-  Cloud,
-  CloudFog,
-  CloudLightning,
-  CloudRain,
-  CloudSnow,
   Compass,
+  Flower2,
   Footprints,
   Gauge,
   Home,
+  Leaf,
   Loader2,
   MapPin,
   RotateCcw,
+  Snowflake,
   Sparkles,
-  Star,
   Sun,
-  TriangleAlert,
+  SunSnow,
   Users,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useLanguage } from "@/lib/i18n/language-context";
+import { usePlaceCheck, PlaceStatusRow } from "@/components/PlaceCheck";
+import { saveTrip } from "@/app/actions/savedTrips";
+import { PlanResults, MAX_REGENERATE_ATTEMPTS_PER_STOP, type Day, type Plan } from "./PlanResults";
 import {
   COMPANION_OPTIONS,
   INTEREST_OPTIONS,
   PACE_OPTIONS,
+  SEASON_OPTIONS,
   TRANSPORT_OPTIONS,
 } from "@/lib/trip-options";
 import {
@@ -49,42 +50,11 @@ import {
   WEATHER_FORECAST_HORIZON_DAYS,
 } from "@/lib/dates";
 
-type Stop = {
-  time: string;
-  title: string;
-  description: string;
-  reason: string;
-  estimatedRating?: number;
-  lat?: number;
-  lon?: number;
-};
-
-type Weather = {
-  tempMaxC: number;
-  tempMinC: number;
-  condition: "clear" | "cloudy" | "fog" | "rain" | "snow" | "storm";
-  label: string;
-};
-
-type Day = {
-  day: number;
-  date?: string;
-  theme: string;
-  stops: Stop[];
-  weather?: Weather;
-};
-
-type Plan = {
-  destination: string;
-  center?: { lat: number; lon: number };
-  days: Day[];
-  groundedPlaceCount?: number;
-};
-
 const STEPS = [
   "destination",
   "accommodation",
   "dates",
+  "season",
   "companions",
   "transport",
   "pace",
@@ -96,28 +66,11 @@ const STEP_ICON: Record<StepKey, LucideIcon> = {
   destination: MapPin,
   accommodation: Home,
   dates: CalendarDays,
+  season: SunSnow,
   companions: Users,
   transport: Compass,
   pace: Gauge,
   interests: Sparkles,
-};
-
-const StopMap = dynamic(() => import("./StopMap").then((m) => m.StopMap), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-full w-full items-center justify-center bg-paper-dim text-sm text-ink-faint">
-      <Loader2 className="h-5 w-5 animate-spin" />
-    </div>
-  ),
-});
-
-const WEATHER_ICON: Record<Weather["condition"], LucideIcon> = {
-  clear: Sun,
-  cloudy: Cloud,
-  fog: CloudFog,
-  rain: CloudRain,
-  snow: CloudSnow,
-  storm: CloudLightning,
 };
 
 const TRANSPORT_ICON: Record<(typeof TRANSPORT_OPTIONS)[number]["value"], LucideIcon> = {
@@ -126,109 +79,12 @@ const TRANSPORT_ICON: Record<(typeof TRANSPORT_OPTIONS)[number]["value"], Lucide
   car: Car,
 };
 
-type PlaceCheckStatus = "idle" | "checking" | "ok" | "fuzzy" | "notfound";
-
-/**
- * Debounced live validation against the same OpenTripMap toponym lookup
- * /api/plan itself relies on for grounding and weather — catches a typo
- * before it silently produces a plan with no real places or forecast,
- * instead of only surfacing the problem after the full generation call.
- */
-function usePlaceCheck(query: string) {
-  const [status, setStatus] = useState<PlaceCheckStatus>("idle");
-  const [resolvedName, setResolvedName] = useState("");
-
-  useEffect(() => {
-    const trimmed = query.trim();
-    if (!trimmed) {
-      setStatus("idle");
-      setResolvedName("");
-      return;
-    }
-    setStatus("checking");
-    const controller = new AbortController();
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/geocode?q=${encodeURIComponent(trimmed)}`, {
-          signal: controller.signal,
-        });
-        const data = await res.json();
-        if (!data.found) {
-          setStatus("notfound");
-          setResolvedName("");
-        } else {
-          setStatus(data.partialMatch ? "fuzzy" : "ok");
-          setResolvedName(data.country ? `${data.name}, ${data.country}` : data.name);
-        }
-      } catch {
-        if (!controller.signal.aborted) setStatus("idle");
-      }
-    }, 500);
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [query]);
-
-  return { status, resolvedName };
-}
-
-function PlaceStatusRow({
-  status,
-  resolvedName,
-  override,
-  onContinueAnyway,
-  t,
-}: {
-  status: PlaceCheckStatus;
-  resolvedName: string;
-  override: boolean;
-  onContinueAnyway: () => void;
-  t: ReturnType<typeof useLanguage>["t"];
-}) {
-  if (status === "idle") return null;
-  return (
-    <div className="mt-3 text-sm">
-      {status === "checking" && (
-        <span className="inline-flex items-center gap-1.5 text-ink-faint">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          {t.wizard.checkingPlace}
-        </span>
-      )}
-      {status === "ok" && (
-        <span className="inline-flex items-center gap-1.5 text-emerald-600">
-          <CircleCheck className="h-3.5 w-3.5" />
-          {t.wizard.placeFound(resolvedName)}
-        </span>
-      )}
-      {status === "fuzzy" && (
-        <span className="inline-flex items-center gap-1.5 text-amber-600">
-          <TriangleAlert className="h-3.5 w-3.5" />
-          {t.wizard.placeFuzzy(resolvedName)}
-        </span>
-      )}
-      {status === "notfound" && (
-        <span className="inline-flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 text-red-600">
-            <TriangleAlert className="h-3.5 w-3.5" />
-            {t.wizard.placeNotFound}
-          </span>
-          {override ? (
-            <span className="text-xs text-ink-faint">{t.wizard.placeNotFoundOverridden}</span>
-          ) : (
-            <button
-              type="button"
-              onClick={onContinueAnyway}
-              className="text-xs text-ink-faint underline decoration-dotted underline-offset-2 hover:text-ink-soft"
-            >
-              {t.wizard.continueAnyway}
-            </button>
-          )}
-        </span>
-      )}
-    </div>
-  );
-}
+const SEASON_ICON: Record<(typeof SEASON_OPTIONS)[number]["value"], LucideIcon> = {
+  summer: Sun,
+  autumn: Leaf,
+  winter: Snowflake,
+  spring: Flower2,
+};
 
 type CurrentUser = {
   plan: "standard" | "pro";
@@ -254,15 +110,20 @@ export function TripBuilder({ user }: { user: CurrentUser | null }) {
     useState<(typeof COMPANION_OPTIONS)[number]["value"]>("solo");
   const [transport, setTransport] =
     useState<(typeof TRANSPORT_OPTIONS)[number]["value"]>("walking");
+  const [season, setSeason] = useState<(typeof SEASON_OPTIONS)[number]["value"]>("summer");
   const [interests, setInterests] = useState<string[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error" | "no-tokens">("idle");
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<Plan | null>(null);
   const [tokensLeft, setTokensLeft] = useState(user?.dayTokens ?? 0);
   const [noTokensResetAt, setNoTokensResetAt] = useState<string | null>(null);
-  const [activeDay, setActiveDay] = useState(1);
   const [destinationOverride, setDestinationOverride] = useState(false);
   const [accommodationOverride, setAccommodationOverride] = useState(false);
+  const [regenerating, setRegenerating] = useState<Record<string, boolean>>({});
+  const [regenerateError, setRegenerateError] = useState<Record<string, string>>({});
+  const [regenerateAttempts, setRegenerateAttempts] = useState<Record<string, number>>({});
+  const [saveState, setSaveState] = useState<"idle" | "saved" | "error">("idle");
+  const [savePending, startSaveTransition] = useTransition();
 
   const destinationCheck = usePlaceCheck(destination);
   const accommodationQuery = accommodation.trim()
@@ -326,6 +187,7 @@ export function TripBuilder({ user }: { user: CurrentUser | null }) {
           accommodation,
           startDate,
           endDate,
+          season,
           pace,
           interests,
           companions,
@@ -347,7 +209,7 @@ export function TripBuilder({ user }: { user: CurrentUser | null }) {
         throw new Error(data?.error ?? "Something went wrong.");
       }
       setPlan(data);
-      setActiveDay(1);
+      setSaveState("idle");
       if (typeof data.tokensRemaining === "number") setTokensLeft(data.tokensRemaining);
       setStatus("done");
     } catch (err) {
@@ -362,6 +224,60 @@ export function TripBuilder({ user }: { user: CurrentUser | null }) {
     setError(null);
     setNoTokensResetAt(null);
     setStepIndex(0);
+  }
+
+  function handleSaveTrip() {
+    if (!plan || saveState === "saved" || savePending) return;
+    startSaveTransition(async () => {
+      const result = await saveTrip(plan);
+      setSaveState(result.ok ? "saved" : "error");
+    });
+  }
+
+  async function regenerateStop(day: Day, stopIndex: number) {
+    const key = `${day.day}-${stopIndex}`;
+    if ((regenerateAttempts[key] ?? 0) >= MAX_REGENERATE_ATTEMPTS_PER_STOP) return;
+    setRegenerating((r) => ({ ...r, [key]: true }));
+    setRegenerateError((e) => ({ ...e, [key]: "" }));
+    try {
+      const res = await fetch("/api/plan/regenerate-stop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          destination: plan!.destination,
+          dayTheme: day.theme,
+          currentStop: day.stops[stopIndex],
+          otherStops: day.stops.filter((_, i) => i !== stopIndex),
+          pace,
+          companions,
+          transport,
+          interests,
+          season,
+          language,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? "Something went wrong.");
+      setPlan((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          days: prev.days.map((d) =>
+            d.day !== day.day
+              ? d
+              : { ...d, stops: d.stops.map((s, i) => (i === stopIndex ? data : s)) },
+          ),
+        };
+      });
+      setRegenerateAttempts((a) => ({ ...a, [key]: (a[key] ?? 0) + 1 }));
+    } catch (err) {
+      setRegenerateError((e) => ({
+        ...e,
+        [key]: err instanceof Error ? err.message : "Something went wrong.",
+      }));
+    } finally {
+      setRegenerating((r) => ({ ...r, [key]: false }));
+    }
   }
 
   if (!user) {
@@ -383,6 +299,7 @@ export function TripBuilder({ user }: { user: CurrentUser | null }) {
           <p className="mt-3 text-lg text-ink-soft">{t.wizard.signInSubtitle}</p>
           <a
             href="/auth/login"
+            rel="nofollow"
             className="mx-auto mt-9 inline-flex items-center gap-2 rounded-lg bg-ink px-6 py-3.5 text-base font-semibold text-paper transition hover:bg-accent"
           >
             {t.wizard.signInCta}
@@ -410,6 +327,12 @@ export function TripBuilder({ user }: { user: CurrentUser | null }) {
                 {t.results.planAnother}
               </button>
             )}
+            <Link
+              href="/saved-trips"
+              className="hidden text-sm font-medium text-ink-soft transition hover:text-ink sm:inline"
+            >
+              {t.savedTrips.navLink}
+            </Link>
             <Link
               href="/account"
               className="hidden text-sm font-medium text-ink-soft transition hover:text-ink sm:inline"
@@ -478,157 +401,41 @@ export function TripBuilder({ user }: { user: CurrentUser | null }) {
             animate={{ opacity: 1, y: 0 }}
             className="mx-auto max-w-6xl px-6 py-16"
           >
-            <div className="text-center">
-              <p className="text-sm font-medium text-accent">
-                {t.results.dayTrip(plan.days.length)}
-              </p>
-              <h1 className="mt-1 text-4xl font-bold tracking-tight text-ink sm:text-5xl">
-                {plan.destination}
-              </h1>
-              {!!plan.groundedPlaceCount && plan.groundedPlaceCount > 0 && (
-                <p className="mt-3 text-sm text-ink-faint">
-                  {t.results.groundedIn(plan.groundedPlaceCount)}
-                </p>
-              )}
-            </div>
-
-            <div className="mt-10 flex justify-center gap-2 overflow-x-auto pb-2">
-              {plan.days.map((d) => {
-                const WeatherIcon = d.weather ? WEATHER_ICON[d.weather.condition] : null;
-                return (
-                  <button
-                    key={d.day}
-                    onClick={() => setActiveDay(d.day)}
-                    className={`shrink-0 rounded-2xl border px-5 py-2 text-center text-sm font-semibold transition ${
-                      activeDay === d.day
-                        ? "border-ink bg-ink text-paper"
-                        : "border-line text-ink-soft hover:border-ink/20"
-                    }`}
-                  >
-                    <span className="block">{t.results.day(d.day)}</span>
-                    {d.date && (
-                      <span
-                        className={`block text-xs font-normal ${
-                          activeDay === d.day ? "text-paper/60" : "text-ink-faint"
-                        }`}
-                      >
-                        {d.date}
-                      </span>
-                    )}
-                    {d.weather && WeatherIcon && (
-                      <span
-                        className={`mt-1 flex items-center justify-center gap-1 text-xs font-normal ${
-                          activeDay === d.day ? "text-paper/60" : "text-ink-faint"
-                        }`}
-                      >
-                        <WeatherIcon className="h-3 w-3" />
-                        {d.weather.tempMaxC}°C
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            <AnimatePresence mode="wait">
-              {plan.days
-                .filter((d) => d.day === activeDay)
-                .map((d) => {
-                  const stopsWithCoords = d.stops.filter(
-                    (s): s is Stop & { lat: number; lon: number } => s.lat != null && s.lon != null,
-                  );
-                  const mapCenter =
-                    plan.center ??
-                    (stopsWithCoords.length > 0
-                      ? { lat: stopsWithCoords[0].lat, lon: stopsWithCoords[0].lon }
-                      : null);
-
-                  return (
-                    <motion.div
-                      key={d.day}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      className="mx-auto mt-10"
-                    >
-                      <h2 className="text-center text-xl font-semibold text-ink">
-                        {d.theme}
-                      </h2>
-                      {(d.date || d.weather) && (
-                        <p className="mt-1 flex items-center justify-center gap-2 text-center text-sm text-ink-faint">
-                          {d.date}
-                          {d.date && d.weather && <span>&middot;</span>}
-                          {d.weather &&
-                            (() => {
-                              const WeatherIcon = WEATHER_ICON[d.weather.condition];
-                              return (
-                                <span className="inline-flex items-center gap-1">
-                                  <WeatherIcon className="h-3.5 w-3.5" />
-                                  {d.weather.label}, {d.weather.tempMinC}–{d.weather.tempMaxC}°C
-                                </span>
-                              );
-                            })()}
-                        </p>
-                      )}
-
-                      <div className="mt-8 grid gap-6 lg:grid-cols-2">
-                        <div className="h-[420px] overflow-hidden rounded-2xl border border-line lg:sticky lg:top-6 lg:h-[calc(100vh-8rem)] lg:max-h-[640px]">
-                          {mapCenter ? (
-                            <StopMap stops={d.stops} center={mapCenter} />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-paper-dim px-6 text-center text-sm text-ink-faint">
-                              <MapPin className="mr-2 h-4 w-4" />
-                              Map unavailable for this trip
-                            </div>
-                          )}
-                        </div>
-
-                        <ul className="space-y-6">
-                          {d.stops.map((stop, i) => (
-                            <motion.li
-                              key={`${stop.title}-${i}`}
-                              initial={{ opacity: 0, x: -12 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: i * 0.08 }}
-                              className="flex gap-3 rounded-2xl border border-line bg-paper-dim p-5"
-                            >
-                              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-white">
-                                {i + 1}
-                              </span>
-                              <div className="min-w-0">
-                                <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">
-                                  {stop.time}
-                                </p>
-                                <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                                  <p className="text-lg font-semibold text-ink">
-                                    {stop.title}
-                                  </p>
-                                  {stop.estimatedRating != null && (
-                                    <span
-                                      title={t.results.aiEstimate}
-                                      className="inline-flex items-center gap-1 text-xs font-medium text-amber-600"
-                                    >
-                                      <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
-                                      {stop.estimatedRating.toFixed(1)}
-                                      <span className="text-ink-faint">({t.results.aiEstimate})</span>
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="mt-1.5 text-sm text-ink-soft">
-                                  {stop.description}
-                                </p>
-                                <p className="mt-2 text-xs text-accent-dark italic">
-                                  {t.results.why}: {stop.reason}
-                                </p>
-                              </div>
-                            </motion.li>
-                          ))}
-                        </ul>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-            </AnimatePresence>
+            <PlanResults
+              plan={plan}
+              onRegenerate={regenerateStop}
+              regenerating={regenerating}
+              regenerateError={regenerateError}
+              regenerateAttempts={regenerateAttempts}
+              headerLeft={
+                <Link
+                  href="/"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-line px-4 py-2 text-sm font-semibold text-ink-soft transition hover:border-ink/20 hover:text-ink"
+                >
+                  <Home className="h-4 w-4" />
+                  {t.results.backToMenu}
+                </Link>
+              }
+              headerRight={
+                <button
+                  type="button"
+                  onClick={handleSaveTrip}
+                  disabled={savePending || saveState === "saved"}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-paper transition hover:bg-accent disabled:cursor-default disabled:opacity-70"
+                >
+                  {saveState === "saved" ? (
+                    <BookmarkCheck className="h-4 w-4" />
+                  ) : (
+                    <Bookmark className="h-4 w-4" />
+                  )}
+                  {saveState === "saved"
+                    ? t.results.savedButton
+                    : savePending
+                      ? t.results.saving
+                      : t.results.saveButton}
+                </button>
+              }
+            />
           </motion.section>
         ) : (
           <motion.section
@@ -809,6 +616,35 @@ export function TripBuilder({ user }: { user: CurrentUser | null }) {
                     <p className="mt-4 text-sm font-medium text-accent">
                       {t.wizard.daysInDestination(days, destination)}
                     </p>
+                  </div>
+                )}
+
+                {stepKey === "season" && (
+                  <div>
+                    <h1 className="text-4xl font-bold tracking-tight text-ink sm:text-5xl">
+                      {t.wizard.seasonTitle}
+                    </h1>
+                    <p className="mt-3 text-lg text-ink-soft">{t.wizard.seasonSubtitle}</p>
+                    <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      {SEASON_OPTIONS.map((option) => {
+                        const Icon = SEASON_ICON[option.value];
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setSeason(option.value)}
+                            className={`flex flex-col items-center gap-2 rounded-xl border px-4 py-6 text-base font-medium transition ${
+                              season === option.value
+                                ? "border-accent bg-accent-soft text-accent-dark"
+                                : "border-line text-ink-soft hover:border-ink/20"
+                            }`}
+                          >
+                            <Icon className="h-6 w-6" />
+                            {t.options.season[option.value]}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 

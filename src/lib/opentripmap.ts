@@ -135,7 +135,9 @@ export async function resolvePlaceName(
     const url = `${BASE_URL}/autosuggest?name=${encodeURIComponent(name.trim())}&radius=15000&lon=${near.lon}&lat=${near.lat}&limit=1&format=json&apikey=${apiKey}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
     if (!res.ok) return null;
-    const matches = (await res.json()) as Array<{ point?: { lat: number; lon: number } }>;
+    const matches = (await res.json()) as Array<{
+      point?: { lat: number; lon: number };
+    }>;
     const point = matches[0]?.point;
     return point ? { lat: point.lat, lon: point.lon } : null;
   } catch {

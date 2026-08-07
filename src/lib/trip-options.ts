@@ -25,3 +25,10 @@ export const TRANSPORT_OPTIONS = [
   { value: "transit", label: "Public transit" },
   { value: "car", label: "Car" },
 ] as const;
+
+export const SEASON_OPTIONS = [
+  { value: "summer", label: "Summer" },
+  { value: "autumn", label: "Autumn" },
+  { value: "winter", label: "Winter" },
+  { value: "spring", label: "Spring" },
+] as const;
