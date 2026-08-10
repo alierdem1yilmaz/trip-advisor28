@@ -3,7 +3,7 @@ import { generateJson } from "@/lib/fal";
 import { findPois, geocodeDestination } from "@/lib/opentripmap";
 import { getDailyForecast } from "@/lib/weather";
 import { LANGUAGE_PROMPT_NAME, resolveLanguage } from "@/lib/i18n/dictionaries";
-import { getCurrentUser } from "@/lib/auth/dal";
+import { getCurrentUserForRequest } from "@/lib/auth/dal";
 import { hasEnoughTokens, consumeTokens } from "@/lib/plan-limits";
 import { prisma } from "@/lib/db";
 import {
@@ -172,7 +172,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const user = await getCurrentUser();
+  const user = await getCurrentUserForRequest(request);
   if (!user) {
     return corsJson(
       { error: "Sign in to build a trip.", code: "SIGN_IN_REQUIRED" },
