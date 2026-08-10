@@ -32,5 +32,10 @@ export async function GET(request: NextRequest) {
     name: result.name,
     country: result.country,
     partialMatch: result.partialMatch,
+    // Not used by the web wizard (it only needs found/name/country to show
+    // a validation message) — the mobile app's wizard uses these to animate
+    // its live map background as a destination/accommodation resolves.
+    lat: result.lat,
+    lon: result.lon,
   });
 }
