@@ -18,7 +18,14 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return [
-      { source: "/kesfedin", destination: `${visitorGuideZoneUrl}/kesfedin` },
+      // The bare basePath root (VisitorGuide's default-locale "tr" home,
+      // reached with no locale segment) 404s under Next.js basePath — a
+      // narrow edge case in how next-intl's as-needed locale prefixing
+      // interacts with basePath, confirmed via local testing (every other
+      // route, including /kesfedin/en and /kesfedin/search, works fine).
+      // Route the bare tab entry straight to the explicit /tr home instead
+      // of hitting that broken bare path.
+      { source: "/kesfedin", destination: `${visitorGuideZoneUrl}/kesfedin/tr` },
       { source: "/kesfedin/:path*", destination: `${visitorGuideZoneUrl}/kesfedin/:path*` },
     ];
   },
