@@ -4,11 +4,10 @@ import type { NextConfig } from "next";
 // runs as its own separate Vercel deployment — a second project built from
 // the VisitorGuide repo with NEXT_PUBLIC_BASE_PATH=/kesfedin — and this app
 // reverse-proxies /kesfedin/* to it server-side, so the browser never
-// leaves this domain. Defaults to the Vercel project name suggested when
-// setting that deployment up; override via VISITORGUIDE_ZONE_URL if the
-// project ends up with a different auto-generated domain.
+// leaves this domain. That project's Vercel-assigned domain (override via
+// VISITORGUIDE_ZONE_URL if it's ever recreated under a different domain).
 const visitorGuideZoneUrl =
-  process.env.VISITORGUIDE_ZONE_URL ?? "https://visitorguide-kesfedin.vercel.app";
+  process.env.VISITORGUIDE_ZONE_URL ?? "https://visitor-guide-jt6e-phi.vercel.app";
 
 const nextConfig: NextConfig = {
   images: {
