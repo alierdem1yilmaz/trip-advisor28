@@ -41,6 +41,12 @@ export function Navbar() {
             {t.nav.explore}
           </Link>
           <Link
+            href="/cruises"
+            className="text-sm font-medium text-ink-soft transition hover:text-ink"
+          >
+            {t.nav.cruisesLink}
+          </Link>
+          <Link
             href="/pricing"
             className="text-sm font-medium text-ink-soft transition hover:text-ink"
           >

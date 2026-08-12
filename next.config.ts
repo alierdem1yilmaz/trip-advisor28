@@ -9,6 +9,14 @@ import type { NextConfig } from "next";
 const visitorGuideZoneUrl =
   process.env.VISITORGUIDE_ZONE_URL ?? "https://visitor-guide-jt6e-phi.vercel.app";
 
+// Same Multi-Zones pattern as VisitorGuide above: the cruise search app
+// (from the cruise-ai repo) runs as its own separate deployment with
+// NEXT_PUBLIC_BASE_PATH=/cruises, and this app reverse-proxies /cruises/*
+// to it server-side. Not to be confused with voyage-ai-omega.vercel.app,
+// which is the friend's own unmodified (blue-themed) standalone deployment
+// of the same repo — this is a separate Vercel project built from our fork.
+const cruiseZoneUrl = process.env.CRUISE_ZONE_URL ?? "https://cruise-ai-three.vercel.app";
+
 const nextConfig: NextConfig = {
   images: {
     // LiteAPI's (liteapi.travel) hotel photo CDN — used on /hotels result
@@ -26,6 +34,8 @@ const nextConfig: NextConfig = {
       // of hitting that broken bare path.
       { source: "/kesfedin", destination: `${visitorGuideZoneUrl}/kesfedin/tr` },
       { source: "/kesfedin/:path*", destination: `${visitorGuideZoneUrl}/kesfedin/:path*` },
+      { source: "/cruises", destination: `${cruiseZoneUrl}/cruises` },
+      { source: "/cruises/:path*", destination: `${cruiseZoneUrl}/cruises/:path*` },
     ];
   },
 };

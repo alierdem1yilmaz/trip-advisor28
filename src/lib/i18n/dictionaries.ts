@@ -22,6 +22,7 @@ export interface Dictionary {
     getEarlyAccess: string;
     hotelsLink: string;
     explore: string;
+    cruisesLink: string;
   };
   hero: {
     badge: string;
@@ -324,6 +325,7 @@ const en: Dictionary = {
     getEarlyAccess: "Get early access",
     hotelsLink: "Hotels",
     explore: "Explore",
+    cruisesLink: "Cruises",
   },
   hero: {
     badge: "Now onboarding early access travelers",
@@ -757,6 +759,7 @@ const tr: Dictionary = {
     getEarlyAccess: "Erken erişim al",
     hotelsLink: "Oteller",
     explore: "Keşfedin",
+    cruisesLink: "Cruise",
   },
   hero: {
     badge: "Şu anda erken erişim gezginleri kabul ediyoruz",
@@ -1199,6 +1202,7 @@ const es: Dictionary = {
     getEarlyAccess: "Acceso anticipado",
     hotelsLink: "Hoteles",
     explore: "Explorar",
+    cruisesLink: "Cruceros",
   },
   hero: {
     badge: "Ahora aceptando viajeros de acceso anticipado",
