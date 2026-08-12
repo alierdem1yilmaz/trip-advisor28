@@ -5,9 +5,11 @@ import type { NextConfig } from "next";
 // the VisitorGuide repo with NEXT_PUBLIC_BASE_PATH=/kesfedin — and this app
 // reverse-proxies /kesfedin/* to it server-side, so the browser never
 // leaves this domain. That project's Vercel-assigned domain (override via
-// VISITORGUIDE_ZONE_URL if it's ever recreated under a different domain).
+// VISITORGUIDE_ZONE_URL if it's ever recreated under a different domain —
+// also set explicitly as a Production env var on this Vercel project, this
+// is just the local-dev/fallback default).
 const visitorGuideZoneUrl =
-  process.env.VISITORGUIDE_ZONE_URL ?? "https://visitor-guide-jt6e-phi.vercel.app";
+  process.env.VISITORGUIDE_ZONE_URL ?? "https://visitor-guide-5z3f-exposure-ai-projects.vercel.app";
 
 // Same Multi-Zones pattern as VisitorGuide above: the cruise search app
 // (from the cruise-ai repo) runs as its own separate deployment with
