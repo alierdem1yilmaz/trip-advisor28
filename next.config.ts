@@ -30,9 +30,9 @@ const nextConfig: NextConfig = {
       // narrow edge case in how next-intl's as-needed locale prefixing
       // interacts with basePath, confirmed via local testing (every other
       // route, including /kesfedin/en and /kesfedin/search, works fine).
-      // Route the bare tab entry straight to the explicit /tr home instead
-      // of hitting that broken bare path.
-      { source: "/kesfedin", destination: `${visitorGuideZoneUrl}/kesfedin/tr` },
+      // src/proxy.ts redirects the bare /kesfedin entry to the
+      // NEXT_LOCALE-appropriate /kesfedin/{locale} before this rewrite
+      // ever sees it, so it never needs a bare-path rule of its own.
       { source: "/kesfedin/:path*", destination: `${visitorGuideZoneUrl}/kesfedin/:path*` },
       { source: "/cruises", destination: `${cruiseZoneUrl}/cruises` },
       { source: "/cruises/:path*", destination: `${cruiseZoneUrl}/cruises/:path*` },

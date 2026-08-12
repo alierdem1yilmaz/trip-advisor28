@@ -188,6 +188,7 @@ export interface Dictionary {
     loginLink: string;
     logout: string;
     account: string;
+    continueWithGoogle: string;
   };
   pricing: {
     navLabel: string;
@@ -603,6 +604,7 @@ const en: Dictionary = {
     loginLink: "Sign in",
     logout: "Log out",
     account: "Account",
+    continueWithGoogle: "Continue with Google",
   },
   pricing: {
     navLabel: "Pricing",
@@ -1040,6 +1042,7 @@ const tr: Dictionary = {
     loginLink: "Giriş yap",
     logout: "Çıkış yap",
     account: "Hesap",
+    continueWithGoogle: "Google ile devam et",
   },
   pricing: {
     navLabel: "Fiyatlandırma",
@@ -1496,6 +1499,7 @@ const es: Dictionary = {
     loginLink: "Inicia sesión",
     logout: "Cerrar sesión",
     account: "Cuenta",
+    continueWithGoogle: "Continuar con Google",
   },
   pricing: {
     navLabel: "Precios",

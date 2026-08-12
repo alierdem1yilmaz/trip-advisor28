@@ -78,13 +78,12 @@ export function Navbar() {
               {t.auth.account}
             </Link>
           ) : (
-            <a
-              href="/auth/login"
-              rel="nofollow"
+            <Link
+              href="/login"
               className="rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-paper transition hover:bg-accent"
             >
               {t.auth.loginLink}
-            </a>
+            </Link>
           )}
         </div>
       </nav>
